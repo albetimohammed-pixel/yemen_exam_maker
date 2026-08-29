@@ -2,47 +2,52 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - name: Set up Java
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java JDK
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
           java-version: '17'
+          distribution: 'temurin'
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.22.x'
           channel: 'stable'
 
-      - name: Prepare Project and Android Files
-        run: |
-          # حفظ الملفات الخاصة بنا مؤقتاً
-          mkdir -p temp_backup
-          cp -r lib temp_backup/ 2>/dev/null || true
-          cp pubspec.yaml temp_backup/ 2>/dev/null || true
-          
-          # إنعاش وتوليد هيكل الأندرويد الكامل
-          flutter create . --overwrite --org com.yemen.exam --project-name yemen_exam_maker
-          
-          # استعادة ملفاتنا البرمجية الرئيسية
-          cp -r temp_backup/lib . 2>/dev/null || true
-          cp temp_backup/pubspec.yaml . 2>/dev/null || true
+      - name: Create Android project scaffold
+        run: flutter create . --platforms=android --org com.yemen.exam
 
-      - name: Install Dependencies
+      - name: Disable R8 Minification (Fix ML Kit build issue)
+        run: |
+          python3 -c "
+          path = 'android/app/build.gradle'
+          with open(path, 'r') as f:
+              content = f.read()
+          content = content.replace('signingConfig signingConfigs.debug', 'signingConfig signingConfigs.debug\n            minifyEnabled false\n            shrinkResources false')
+          with open(path, 'w') as f:
+              f.write(content)
+          "
+
+      - name: Install dependencies
         run: flutter pub get
 
-      - name: Build APK
+      - name: Build Release APK
         run: flutter build apk --release
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: yemen-exam-app
+          name: app-release
           path: build/app/outputs/flutter-apk/app-release.apk
