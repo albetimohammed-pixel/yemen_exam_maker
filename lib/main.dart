@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 
 void main() {
   runApp(const YemenExamMakerApp());
@@ -16,7 +18,7 @@ class YemenExamMakerApp extends StatelessWidget {
       title: 'صانع الاختبارات اليمنية',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
         useMaterial3: true,
       ),
       home: const ExamHomeScreen(),
@@ -24,12 +26,22 @@ class YemenExamMakerApp extends StatelessWidget {
   }
 }
 
+enum QuestionType { essay, matching }
+
+class MatchingPair {
+  String itemA;
+  String itemB;
+  MatchingPair({required this.itemA, required this.itemB});
+}
+
 class QuestionItem {
-  String questionNum; // 1, 2, 3...
-  String subLetter;   // أ, ب, ج...
+  String questionNum; // 1, 2...
+  String subLetter;   // أ, ب...
   String text;        // نص السؤال
-  int mark;           // الدرجة (مثلاً 6)
-  int blankLines;     // عدد أسطر الإجابة أو الفراغات
+  int mark;           // الدرجة
+  int blankLines;     // عدد أسطر الفراغ
+  QuestionType type;  // نوع السؤال
+  List<MatchingPair> matchingPairs;
 
   QuestionItem({
     required this.questionNum,
@@ -37,6 +49,8 @@ class QuestionItem {
     required this.text,
     required this.mark,
     this.blankLines = 1,
+    this.type = QuestionType.essay,
+    this.matchingPairs = const [],
   });
 }
 
@@ -48,7 +62,7 @@ class ExamHomeScreen extends StatefulWidget {
 }
 
 class _ExamHomeScreenState extends State<ExamHomeScreen> {
-  // بيانات الترويسة من الصورة
+  // بيانات الترويسة
   final _schoolController = TextEditingController(text: 'ثانوية المكلا النموذجية للبنين');
   final _directorateController = TextEditingController(text: 'مديرية المكلا');
   final _examTitleController = TextEditingController(text: 'اختبار الشهري الثاني الفصل الدراسي الثاني');
@@ -58,45 +72,79 @@ class _ExamHomeScreenState extends State<ExamHomeScreen> {
   final _dateController = TextEditingController(text: '2026/4/20م');
   final _timeController = TextEditingController(text: 'حصة');
 
-  final List<QuestionItem> _questions = [
-    QuestionItem(
-      questionNum: '1',
-      subLetter: 'أ',
-      text: 'أكمل الفراغات الآتية بالكلمات المناسبة فيما يلي:\n1- يتحقق العدل داخل المجتمع من خلال العناية بـ _______________________\n2- الشعب بدورة يجعل السكان هم العنصر الأساسي لـ _______________________\n3- الحصول على القروض والمساعدات التي تمكن الدول من أن تخطو خطوات واسعة في _______________________',
-      mark: 6,
-      blankLines: 0,
-    ),
-    QuestionItem(
-      questionNum: '',
-      subLetter: 'ب',
-      text: 'ما دور الدولة في تطوير المياه والصرف الصحي؟',
-      mark: 6,
-      blankLines: 2,
-    ),
-    QuestionItem(
-      questionNum: '',
-      subLetter: 'ج',
-      text: 'ناقش العبارة الاتية: (حكومة الديمقراطية هي حكومة الأغلبية).',
-      mark: 4,
-      blankLines: 2,
-    ),
-    QuestionItem(
-      questionNum: '',
-      subLetter: 'د',
-      text: 'ماذا حصل مع بداية الخمسينات من القرن العشرين لحركة المعارضة ضد الاستعمار البريطاني؟',
-      mark: 4,
-      blankLines: 2,
-    ),
-  ];
+  final List<QuestionItem> _questions = [];
 
+  // متحكمات إضافة سؤال جديد
+  QuestionType _selectedType = QuestionType.essay;
   final _qNumController = TextEditingController();
   final _subLetterController = TextEditingController();
   final _qTextController = TextEditingController();
   final _markController = TextEditingController(text: '5');
   int _linesCount = 2;
+  bool _isScanning = false;
+
+  // متحكمات جدول التوصيل
+  final List<TextEditingController> _colAControllers = [];
+  final List<TextEditingController> _colBControllers = [];
+
+  // ميزة مسح النص بالكاميرا (OCR)
+  Future<void> _scanTextFromCamera(StateSetter setModalState) async {
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.camera);
+
+    if (image == null) return;
+
+    setModalState(() => _isScanning = true);
+
+    try {
+      final inputImage = InputImage.fromFilePath(image.path);
+      final textRecognizer = TextRecognizer();
+      final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
+
+      setModalState(() {
+        _qTextController.text = recognizedText.text;
+        _isScanning = false;
+      });
+
+      textRecognizer.close();
+    } catch (e) {
+      setModalState(() => _isScanning = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('حدث خطأ أثناء التعرف على النص: $e')),
+        );
+      }
+    }
+  }
+
+  void _addPairField() {
+    setState(() {
+      _colAControllers.add(TextEditingController());
+      _colBControllers.add(TextEditingController());
+    });
+  }
+
+  void _removePairField(int index) {
+    setState(() {
+      _colAControllers.removeAt(index);
+      _colBControllers.removeAt(index);
+    });
+  }
 
   void _addQuestion() {
     if (_qTextController.text.trim().isEmpty) return;
+
+    List<MatchingPair> pairs = [];
+    if (_selectedType == QuestionType.matching) {
+      for (int i = 0; i < _colAControllers.length; i++) {
+        if (_colAControllers[i].text.isNotEmpty || _colBControllers[i].text.isNotEmpty) {
+          pairs.add(MatchingPair(
+            itemA: _colAControllers[i].text,
+            itemB: _colBControllers[i].text,
+          ));
+        }
+      }
+    }
 
     setState(() {
       _questions.add(
@@ -106,62 +154,158 @@ class _ExamHomeScreenState extends State<ExamHomeScreen> {
           text: _qTextController.text,
           mark: int.tryParse(_markController.text) ?? 5,
           blankLines: _linesCount,
+          type: _selectedType,
+          matchingPairs: pairs,
         ),
       );
     });
 
-    _qNumController.clear();
-    _subLetterController.clear();
-    _qTextController.clear();
+    _resetForm();
     Navigator.pop(context);
   }
 
+  void _resetForm() {
+    _qNumController.clear();
+    _subLetterController.clear();
+    _qTextController.clear();
+    _colAControllers.clear();
+    _colBControllers.clear();
+    _selectedType = QuestionType.essay;
+  }
+
   void _showAddDialog() {
+    _resetForm();
+    _addPairField();
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-          top: 20, left: 20, right: 20,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text('إضافة فقرة / سؤال جديد', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(child: TextField(controller: _qNumController, decoration: const InputDecoration(labelText: 'رقم السؤال (مثال: 1)'))),
-                const SizedBox(width: 10),
-                Expanded(child: TextField(controller: _subLetterController, decoration: const InputDecoration(labelText: 'رمز الفقرة (مثال: أ)'))),
-                const SizedBox(width: 10),
-                Expanded(child: TextField(controller: _markController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'الدرجة'))),
-              ],
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+              top: 20, left: 20, right: 20,
             ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _qTextController,
-              maxLines: 3,
-              decoration: const InputDecoration(labelText: 'نص السؤال / الفقرة', border: OutlineInputBorder()),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text('إضافة سؤال جديد', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                  const SizedBox(height: 10),
+
+                  SegmentedButton<QuestionType>(
+                    segments: const [
+                      ButtonSegment(value: QuestionType.essay, label: Text('سؤال عادي / مقالي')),
+                      ButtonSegment(value: QuestionType.matching, label: Text('جدول توصيل (صل)')),
+                    ],
+                    selected: {_selectedType},
+                    onSelectionChanged: (newSelection) {
+                      setModalState(() {
+                        _selectedType = newSelection.first;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 15),
+
+                  Row(
+                    children: [
+                      Expanded(child: TextField(controller: _qNumController, decoration: const InputDecoration(labelText: 'رقم السؤال (1، 2..)'))),
+                      const SizedBox(width: 10),
+                      Expanded(child: TextField(controller: _subLetterController, decoration: const InputDecoration(labelText: 'رمز الفقرة (أ، ب..)'))),
+                      const SizedBox(width: 10),
+                      Expanded(child: TextField(controller: _markController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'الدرجة'))),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+
+                  // زر تصوير السؤال بالكاميرا
+                  OutlinedButton.icon(
+                    onPressed: _isScanning ? null : () => _scanTextFromCamera(setModalState),
+                    icon: _isScanning
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.camera_alt, color: Colors.teal),
+                    label: Text(_isScanning ? 'جاري القراءة...' : '📷 مسح السؤال بالكاميرا من كتاب/ورقة'),
+                  ),
+                  const SizedBox(height: 10),
+
+                  TextField(
+                    controller: _qTextController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      labelText: _selectedType == QuestionType.matching ? 'توجيه السؤال (صل العمود أ بـ ب)' : 'نص السؤال / الفقرة',
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  if (_selectedType == QuestionType.essay) ...[
+                    Row(
+                      children: [
+                        const Text('أسطر الإجابة الفارغة: '),
+                        DropdownButton<int>(
+                          value: _linesCount,
+                          items: List.generate(6, (i) => DropdownMenuItem(value: i, child: Text('$i أسطر'))),
+                          onChanged: (v) => setModalState(() => _linesCount = v ?? 2),
+                        ),
+                      ],
+                    ),
+                  ],
+
+                  if (_selectedType == QuestionType.matching) ...[
+                    const Divider(),
+                    const Text('عناصر جدول التوصيل:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _colAControllers.length,
+                      itemBuilder: (context, i) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8.0),
+                          child: Row(
+                            children: [
+                              Text('${i + 1}- '),
+                              Expanded(child: TextField(controller: _colAControllers[i], decoration: const InputDecoration(labelText: 'العمود (أ)', isDense: true, border: OutlineInputBorder()))),
+                              const SizedBox(width: 8),
+                              Expanded(child: TextField(controller: _colBControllers[i], decoration: const InputDecoration(labelText: 'العمود (ب)', isDense: true, border: OutlineInputBorder()))),
+                              IconButton(
+                                icon: const Icon(Icons.remove_circle, color: Colors.red),
+                                onPressed: () => setModalState(() => _removePairField(i)),
+                              )
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                    TextButton.icon(
+                      onPressed: () => setModalState(() => _addPairField()),
+                      icon: const Icon(Icons.add),
+                      label: const Text('إضافة صف توصيل جديد'),
+                    ),
+                  ],
+
+                  const SizedBox(height: 15),
+                  ElevatedButton.icon(
+                    onPressed: _addQuestion,
+                    icon: const Icon(Icons.check),
+                    label: const Text('إضافة للاختبار'),
+                  )
+                ],
+              ),
             ),
-            const SizedBox(height: 15),
-            ElevatedButton.icon(
-              onPressed: _addQuestion,
-              icon: const Icon(Icons.add),
-              label: const Text('إضافة للاختبار'),
-            )
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
+  // تصدير PDF
   Future<void> _exportPdf() async {
     final pdf = pw.Document();
     final font = await PdfGoogleFonts.cairoRegular();
     final fontBold = await PdfGoogleFonts.cairoBold();
+    const arabicLetters = ['أ', 'ب', 'ج', 'د', 'هـ', 'و', 'ز', 'ح', 'ط', 'ي'];
 
     pdf.addPage(
       pw.Page(
@@ -176,7 +320,7 @@ class _ExamHomeScreenState extends State<ExamHomeScreen> {
             ),
             child: pw.Column(
               children: [
-                // 1. الترويسة الرسمية الثلاثية (طابق الصورة تماماً)
+                // 1. الترويسة
                 pw.Container(
                   padding: const pw.EdgeInsets.all(5),
                   decoration: pw.BoxDecoration(
@@ -186,7 +330,6 @@ class _ExamHomeScreenState extends State<ExamHomeScreen> {
                   child: pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
-                      // اليمين: المدرسة والمديرية والزمن
                       pw.Container(
                         width: 150,
                         child: pw.Column(
@@ -198,7 +341,6 @@ class _ExamHomeScreenState extends State<ExamHomeScreen> {
                           ],
                         ),
                       ),
-                      // الوسط: الشكل البيضاوي لعنوان الاختبار
                       pw.Container(
                         padding: const pw.EdgeInsets.symmetric(horizontal: 15, vertical: 6),
                         decoration: pw.BoxDecoration(
@@ -213,7 +355,6 @@ class _ExamHomeScreenState extends State<ExamHomeScreen> {
                           ],
                         ),
                       ),
-                      // اليسار: المادة واليوم والتاريخ
                       pw.Container(
                         width: 150,
                         child: pw.Column(
@@ -240,72 +381,72 @@ class _ExamHomeScreenState extends State<ExamHomeScreen> {
                 ),
                 pw.SizedBox(height: 8),
 
-                // 3. جدول الأسئلة مع خانة الدرجات ورقم السؤال
+                // 3. جدول الأسئلة
                 pw.Expanded(
                   child: pw.Table(
                     border: pw.TableBorder.all(width: 1, color: PdfColors.black),
                     columnWidths: {
-                      0: const pw.FixedColumnWidth(40),  // عمود الدرجة
-                      1: const pw.FlexColumnWidth(),     // عمود السؤال والأسئلة
-                      2: const pw.FixedColumnWidth(45),  // عمود رقم السؤال
+                      0: const pw.FixedColumnWidth(40),
+                      1: const pw.FlexColumnWidth(),
+                      2: const pw.FixedColumnWidth(45),
                     },
                     children: [
-                      // رأس الجدول
                       pw.TableRow(
                         children: [
-                          pw.Container(
-                            padding: const pw.EdgeInsets.all(4),
-                            alignment: pw.Alignment.center,
-                            child: pw.Text('الدرجة', style: pw.TextStyle(font: fontBold, fontSize: 11)),
-                          ),
-                          pw.Container(
-                            padding: const pw.EdgeInsets.all(4),
-                            alignment: pw.Alignment.centerRight,
-                            child: pw.Text('* اجب عن جميع الأسئلة الآتية :', style: pw.TextStyle(font: fontBold, fontSize: 11)),
-                          ),
-                          pw.Container(
-                            padding: const pw.EdgeInsets.all(4),
-                            alignment: pw.Alignment.center,
-                            child: pw.Text('السؤال', style: pw.TextStyle(font: fontBold, fontSize: 11)),
-                          ),
+                          pw.Container(padding: const pw.EdgeInsets.all(4), alignment: pw.Alignment.center, child: pw.Text('الدرجة', style: pw.TextStyle(font: fontBold, fontSize: 11))),
+                          pw.Container(padding: const pw.EdgeInsets.all(4), alignment: pw.Alignment.centerRight, child: pw.Text('* اجب عن جميع الأسئلة الآتية :', style: pw.TextStyle(font: fontBold, fontSize: 11))),
+                          pw.Container(padding: const pw.EdgeInsets.all(4), alignment: pw.Alignment.center, child: pw.Text('السؤال', style: pw.TextStyle(font: fontBold, fontSize: 11))),
                         ],
                       ),
-                      // صفوف الأسئلة
                       ..._questions.map((q) {
                         return pw.TableRow(
                           children: [
-                            // خانة الدرجة
-                            pw.Container(
-                              padding: const pw.EdgeInsets.all(8),
-                              alignment: pw.Alignment.center,
-                              child: pw.Text('${q.mark}', style: pw.TextStyle(font: fontBold, fontSize: 12)),
-                            ),
-                            // نص السؤال
+                            pw.Container(padding: const pw.EdgeInsets.all(8), alignment: pw.Alignment.center, child: pw.Text('${q.mark}', style: pw.TextStyle(font: fontBold, fontSize: 12))),
                             pw.Container(
                               padding: const pw.EdgeInsets.all(8),
                               child: pw.Column(
                                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                                 children: [
                                   pw.Text('${q.subLetter}) ${q.text}', style: pw.TextStyle(font: fontBold, fontSize: 11)),
-                                  if (q.blankLines > 0)
+                                  if (q.type == QuestionType.essay && q.blankLines > 0)
                                     ...List.generate(
                                       q.blankLines,
                                       (index) => pw.Container(
-                                        margin: const pw.EdgeInsets.only(top: 25),
-                                        decoration: const pw.BoxDecoration(
-                                          border: pw.Border(bottom: pw.BorderSide(width: 0.5, color: PdfColors.grey700)),
-                                        ),
+                                        margin: const pw.EdgeInsets.only(top: 20),
+                                        decoration: const pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(width: 0.5, color: PdfColors.grey700))),
                                       ),
                                     ),
+                                  if (q.type == QuestionType.matching && q.matchingPairs.isNotEmpty) ...[
+                                    pw.SizedBox(height: 6),
+                                    pw.Table(
+                                      border: pw.TableBorder.all(width: 0.8, color: PdfColors.black),
+                                      columnWidths: {0: const pw.FlexColumnWidth(1), 1: const pw.FlexColumnWidth(1)},
+                                      children: [
+                                        pw.TableRow(
+                                          decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                                          children: [
+                                            pw.Container(padding: const pw.EdgeInsets.all(4), alignment: pw.Alignment.center, child: pw.Text('العمود ( ب )', style: pw.TextStyle(font: fontBold, fontSize: 10))),
+                                            pw.Container(padding: const pw.EdgeInsets.all(4), alignment: pw.Alignment.center, child: pw.Text('العمود ( أ )', style: pw.TextStyle(font: fontBold, fontSize: 10))),
+                                          ],
+                                        ),
+                                        ...q.matchingPairs.asMap().entries.map((entry) {
+                                          int idx = entry.key;
+                                          MatchingPair pair = entry.value;
+                                          String letter = idx < arabicLetters.length ? arabicLetters[idx] : '${idx + 1}';
+                                          return pw.TableRow(
+                                            children: [
+                                              pw.Container(padding: const pw.EdgeInsets.all(5), alignment: pw.Alignment.centerRight, child: pw.Text('(    ) $letter - ${pair.itemB}', style: pw.TextStyle(font: font, fontSize: 10))),
+                                              pw.Container(padding: const pw.EdgeInsets.all(5), alignment: pw.Alignment.centerRight, child: pw.Text('${idx + 1} - ${pair.itemA}', style: pw.TextStyle(font: font, fontSize: 10))),
+                                            ],
+                                          );
+                                        }),
+                                      ],
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),
-                            // رقم السؤال
-                            pw.Container(
-                              padding: const pw.EdgeInsets.all(8),
-                              alignment: pw.Alignment.center,
-                              child: pw.Text(q.questionNum, style: pw.TextStyle(font: fontBold, fontSize: 14)),
-                            ),
+                            pw.Container(padding: const pw.EdgeInsets.all(8), alignment: pw.Alignment.center, child: pw.Text(q.questionNum, style: pw.TextStyle(font: fontBold, fontSize: 14))),
                           ],
                         );
                       }),
@@ -319,9 +460,7 @@ class _ExamHomeScreenState extends State<ExamHomeScreen> {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-    );
+    await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
   }
 
   @override
@@ -384,7 +523,7 @@ class _ExamHomeScreenState extends State<ExamHomeScreen> {
                 ElevatedButton.icon(
                   onPressed: _showAddDialog,
                   icon: const Icon(Icons.add),
-                  label: const Text('إضافة سؤال'),
+                  label: const Text('إضافة سؤال / مسح بالكاميرا'),
                 ),
               ],
             ),
@@ -397,9 +536,12 @@ class _ExamHomeScreenState extends State<ExamHomeScreen> {
                 final q = _questions[i];
                 return Card(
                   child: ListTile(
-                    leading: CircleAvatar(child: Text(q.subLetter.isEmpty ? '${i + 1}' : q.subLetter)),
+                    leading: CircleAvatar(
+                      backgroundColor: q.type == QuestionType.matching ? Colors.orange.shade100 : Colors.teal.shade100,
+                      child: Icon(q.type == QuestionType.matching ? Icons.table_chart : Icons.short_text),
+                    ),
                     title: Text(q.text, maxLines: 2, overflow: TextOverflow.ellipsis),
-                    subtitle: Text('الدرجة: ${q.mark} | رقم السؤال الرئيسي: ${q.questionNum}'),
+                    subtitle: Text('النوع: ${q.type == QuestionType.matching ? "جدول توصيل" : "سؤال مقالي"} | الدرجة: ${q.mark}'),
                     trailing: IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
                       onPressed: () {
