@@ -21,11 +21,19 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Create Android Scaffold if missing
+      - name: Prepare Project and Android Files
         run: |
-          if [ ! -d "android" ]; then
-            flutter create . --platforms=android --project-name=yemen_exam_maker
-          fi
+          # حفظ الملفات الخاصة بنا مؤقتاً
+          mkdir -p temp_backup
+          cp -r lib temp_backup/ 2>/dev/null || true
+          cp pubspec.yaml temp_backup/ 2>/dev/null || true
+          
+          # إنعاش وتوليد هيكل الأندرويد الكامل
+          flutter create . --overwrite --org com.yemen.exam --project-name yemen_exam_maker
+          
+          # استعادة ملفاتنا البرمجية الرئيسية
+          cp -r temp_backup/lib . 2>/dev/null || true
+          cp temp_backup/pubspec.yaml . 2>/dev/null || true
 
       - name: Install Dependencies
         run: flutter pub get
