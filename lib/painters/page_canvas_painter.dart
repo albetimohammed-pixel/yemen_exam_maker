@@ -64,7 +64,7 @@ class PageCanvasPainter extends CustomPainter {
       canvas.rotate(watermarkConfig.rotationDegree * math.pi / 180);
 
       // حساب العرض المباشر
-      double drawWidth = size.shortSide * watermarkConfig.sizePercentage;
+      double drawWidth = size.shortestSide * watermarkConfig.sizePercentage;
       if (drawWidth < watermarkConfig.minDp) drawWidth = watermarkConfig.minDp;
       if (drawWidth > watermarkConfig.maxDp) drawWidth = watermarkConfig.maxDp;
 
