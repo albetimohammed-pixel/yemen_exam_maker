@@ -18,7 +18,7 @@ class AnswerSheetGridBuilder extends StatelessWidget {
     final List<String> mcqOptions = isArabic ? ['أ', 'ب', 'ج', 'د'] : ['A', 'B', 'C', 'D'];
 
     return Column(
-      crossAxisAlignment: CrossAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (tfCount > 0) ...[
           Text(
