@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../controllers/editor_controller.dart';
+import '../core/constants/app_colors.dart';
 import '../painters/page_canvas_painter.dart';
 import '../widgets/question_bar_widget.dart';
 import '../widgets/answer_sheet_grid_builder.dart';
+import 'widgets/custom_slider_tile.dart';
+import 'widgets/template_picker_sheet.dart';
+import 'widgets/preview_toolbar.dart';
 
 class MainEditorScreen extends StatefulWidget {
   const MainEditorScreen({Key? key}) : super(key: key);
@@ -14,11 +18,25 @@ class MainEditorScreen extends StatefulWidget {
 
 class _MainEditorScreenState extends State<MainEditorScreen> {
   final EditorController _controller = EditorController();
+  final TransformationController _transformationController = TransformationController();
 
   @override
   void dispose() {
     _controller.dispose();
+    _transformationController.dispose();
     super.dispose();
+  }
+
+  void _resetZoom() {
+    _transformationController.value = Matrix4.identity();
+  }
+
+  void _openTemplatePicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => TemplatePickerSheet(controller: _controller),
+    );
   }
 
   @override
@@ -27,56 +45,55 @@ class _MainEditorScreenState extends State<MainEditorScreen> {
       appBar: AppBar(
         title: const Text('المحرر المدرسي الشامل Pro 39'),
         centerTitle: true,
-        backgroundColor: const Color(0xFF673AB7),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.print),
-            onPressed: () {
-              // مسار استدعاء محرك الطباعة والتصدير
-            },
-          ),
-        ],
+        backgroundColor: AppColors.darkPurple,
+        elevation: 0,
       ),
       body: ListenableBuilder(
         listenable: _controller,
         builder: (context, child) {
           return Column(
             children: [
-              // 1. منطقة المعاينة المباشرة (Paper Canvas Preview Area)
+              // 1. منطقة معاينة الورقة المعتمدة على InteractiveViewer (Pinch-to-Zoom)
               Expanded(
                 flex: 5,
                 child: Container(
-                  color: Colors.grey.shade300,
-                  padding: const EdgeInsets.all(16.0),
-                  child: Center(
-                    child: AspectRatio(
-                      aspectRatio: 1 / 1.414, // نسبة أبعاد ورقة A4
-                      child: CustomPaint(
-                        painter: PageCanvasPainter(
-                          borderConfig: _controller.borderConfig,
-                          watermarkConfig: _controller.watermarkConfig,
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(20.0),
-                          child: SingleChildScrollView(
-                            child: Column(
-                              crossAxisAlignment: CrossAlignment.start,
-                              children: [
-                                // عينة من شريط الأسئلة المعاين
-                                QuestionBarWidget(
-                                  questionNumber: 'س1',
-                                  questionTitle: 'ضع علامة (صح) أو (خطأ) أمام العبارات التالية',
-                                  gradeText: '5 درجات',
-                                  config: _controller.questionConfig,
+                  color: AppColors.canvasBg,
+                  width: double.infinity,
+                  child: InteractiveViewer(
+                    transformationController: _transformationController,
+                    minScale: 0.8,
+                    maxScale: 3.0,
+                    child: Center(
+                      child: Container(
+                        margin: const EdgeInsets.all(16),
+                        child: AspectRatio(
+                          aspectRatio: 1 / 1.414,
+                          child: CustomPaint(
+                            painter: PageCanvasPainter(
+                              borderConfig: _controller.borderConfig,
+                              watermarkConfig: _controller.watermarkConfig,
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: SingleChildScrollView(
+                                child: Column(
+                                  crossAxisAlignment: CrossAlignment.start,
+                                  children: [
+                                    QuestionBarWidget(
+                                      questionNumber: 'س1',
+                                      questionTitle: 'أجب عن الأسئلة التالية بدقة',
+                                      gradeText: '10 درجات',
+                                      config: _controller.questionConfig,
+                                    ),
+                                    const SizedBox(height: 12),
+                                    AnswerSheetGridBuilder(
+                                      tfCount: _controller.tfQuestionCount,
+                                      mcqCount: _controller.mcqQuestionCount,
+                                      language: _controller.selectedLanguage,
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 16),
-                                // عينة شبكة صفحة الإجابات
-                                AnswerSheetGridBuilder(
-                                  tfCount: _controller.tfQuestionCount,
-                                  mcqCount: _controller.mcqQuestionCount,
-                                  language: _controller.selectedLanguage,
-                                ),
-                              ],
+                              ),
                             ),
                           ),
                         ),
@@ -86,35 +103,105 @@ class _MainEditorScreenState extends State<MainEditorScreen> {
                 ),
               ),
 
-              // 2. لوحة التحكم والضبط السفلي (Control Panel Tabs)
+              // 2. شريط الأدوات السريع
+              PreviewToolbar(
+                onZoomToggle: _resetZoom,
+                onTemplateTap: _openTemplatePicker,
+                onPrintTap: () {},
+              ),
+
+              // 3. لوحة تحكم الخصائص التفاعلية
               Expanded(
                 flex: 4,
-                child: DefaultTabController(
-                  length: 3,
-                  child: Column(
-                    children: [
-                      const TabBar(
-                        labelColor: Color(0xFF673AB7),
-                        unselectedLabelColor: Colors.black54,
-                        tabs: [
-                          Tab(icon: Icon(Icons.edit_note), text: 'السؤال'),
-                          Tab(icon: Icon(Icons.crop_square), text: 'الإطار'),
-                          Tab(icon: Icon(Icons.branding_watermark), text: 'العلامة المائية'),
-                        ],
-                      ),
-                      Expanded(
-                        child: TabBarView(
-                          children: [
-                            // تبويب إعدادات شريط السؤال
-                            _buildQuestionControls(),
-                            // تبويب إعدادات الإطار والحدود
-                            _buildBorderControls(),
-                            // تبويب إعدادات العلامة المائية
-                            _buildWatermarkControls(),
+                child: Container(
+                  color: AppColors.backgroundDark,
+                  child: DefaultTabController(
+                    length: 3,
+                    child: Column(
+                      children: [
+                        const TabBar(
+                          indicatorColor: AppColors.accentGreen,
+                          labelColor: AppColors.accentGreen,
+                          unselectedLabelColor: Colors.white70,
+                          tabs: [
+                            Tab(icon: Icon(Icons.settings), text: 'السؤال'),
+                            Tab(icon: Icon(Icons.crop_square), text: 'الإطار'),
+                            Tab(icon: Icon(Icons.blur_on), text: 'العلامة المائية'),
                           ],
                         ),
-                      ),
-                    ],
+                        Expanded(
+                          child: TabBarView(
+                            children: [
+                              // 1. تبويب السؤال
+                              ListView(
+                                children: [
+                                  CustomSliderTile(
+                                    label: 'عرض الشريط',
+                                    value: _controller.questionConfig.barWidth,
+                                    min: 150,
+                                    max: 400,
+                                    unit: 'dp',
+                                    onChanged: _controller.updateQuestionBarWidth,
+                                  ),
+                                  CustomSliderTile(
+                                    label: 'انحناء الزوايا',
+                                    value: _controller.questionConfig.cornerRadius,
+                                    min: 0,
+                                    max: 20,
+                                    unit: 'dp',
+                                    onChanged: _controller.updateQuestionCornerRadius,
+                                  ),
+                                ],
+                              ),
+
+                              // 2. تبويب الإطار
+                              ListView(
+                                children: [
+                                  CustomSliderTile(
+                                    label: 'سمك الإطار الخارجي',
+                                    value: _controller.borderConfig.outerBorderWidth,
+                                    min: 1,
+                                    max: 10,
+                                    unit: 'dp',
+                                    onChanged: _controller.updateOuterBorderWidth,
+                                  ),
+                                  CustomSliderTile(
+                                    label: 'المسافة الفاصلة',
+                                    value: _controller.borderConfig.spacing,
+                                    min: 0,
+                                    max: 20,
+                                    unit: 'dp',
+                                    onChanged: _controller.updateSpacing,
+                                  ),
+                                ],
+                              ),
+
+                              // 3. تبويب العلامة المائية
+                              ListView(
+                                children: [
+                                  CustomSliderTile(
+                                    label: 'درجة الشفافية',
+                                    value: _controller.watermarkConfig.opacity * 100,
+                                    min: 0,
+                                    max: 30,
+                                    unit: '%',
+                                    onChanged: (v) => _controller.updateWatermarkOpacity(v / 100),
+                                  ),
+                                  CustomSliderTile(
+                                    label: 'زاوية الدوران',
+                                    value: _controller.watermarkConfig.rotationDegree,
+                                    min: 0,
+                                    max: 360,
+                                    unit: '°',
+                                    onChanged: _controller.updateWatermarkRotation,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -122,88 +209,6 @@ class _MainEditorScreenState extends State<MainEditorScreen> {
           );
         },
       ),
-    );
-  }
-
-  // عناصر التحكم بشريط السؤال
-  Widget _buildQuestionControls() {
-    return ListView(
-      padding: const EdgeInsets.all(12),
-      children: [
-        SwitchListTile(
-          title: const Text('إظهار مربع الدرجة'),
-          value: _controller.questionConfig.showGradeBox,
-          onChanged: _controller.toggleShowGradeBox,
-        ),
-        SwitchListTile(
-          title: const Text('إظهار الشريط الجانبي'),
-          value: _controller.questionConfig.showSidebar,
-          onChanged: _controller.toggleShowSidebar,
-        ),
-        Text('انحناء الزوايا: ${_controller.questionConfig.cornerRadius.toStringAsFixed(1)} dp'),
-        Slider(
-          value: _controller.questionConfig.cornerRadius,
-          min: 0,
-          max: 20,
-          onChanged: _controller.updateQuestionCornerRadius,
-        ),
-      ],
-    );
-  }
-
-  // عناصر التحكم بالإطار والحدود
-  Widget _buildBorderControls() {
-    return ListView(
-      padding: const EdgeInsets.all(12),
-      children: [
-        SwitchListTile(
-          title: const Text('تفعيل إطار الصفحة'),
-          value: _controller.borderConfig.isEnabled,
-          onChanged: _controller.toggleBorder,
-        ),
-        Text('سمك الإطار الخارجي: ${_controller.borderConfig.outerBorderWidth.toStringAsFixed(1)} dp'),
-        Slider(
-          value: _controller.borderConfig.outerBorderWidth,
-          min: 1,
-          max: 10,
-          onChanged: _controller.updateOuterBorderWidth,
-        ),
-        Text('المسافة الفاصلة: ${_controller.borderConfig.spacing.toStringAsFixed(1)} dp'),
-        Slider(
-          value: _controller.borderConfig.spacing,
-          min: 0,
-          max: 15,
-          onChanged: _controller.updateSpacing,
-        ),
-      ],
-    );
-  }
-
-  // عناصر التحكم بالعلامة المائية
-  Widget _buildWatermarkControls() {
-    return ListView(
-      padding: const EdgeInsets.all(12),
-      children: [
-        SwitchListTile(
-          title: const Text('تفعيل العلامة المائية'),
-          value: _controller.watermarkConfig.isEnabled,
-          onChanged: _controller.toggleWatermark,
-        ),
-        Text('درجة الشفافية: ${(_controller.watermarkConfig.opacity * 100).toInt()}%'),
-        Slider(
-          value: _controller.watermarkConfig.opacity,
-          min: 0.0,
-          max: 0.3,
-          onChanged: _controller.updateWatermarkOpacity,
-        ),
-        Text('زاوية الدوران: ${_controller.watermarkConfig.rotationDegree.toInt()}°'),
-        Slider(
-          value: _controller.watermarkConfig.rotationDegree,
-          min: 0,
-          max: 360,
-          onChanged: _controller.updateWatermarkRotation,
-        ),
-      ],
     );
   }
 }
