@@ -77,7 +77,7 @@ class _MainEditorScreenState extends State<MainEditorScreen> {
                               padding: const EdgeInsets.all(16.0),
                               child: SingleChildScrollView(
                                 child: Column(
-                                  crossAxisAlignment: CrossAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     QuestionBarWidget(
                                       questionNumber: 'س1',
