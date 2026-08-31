@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../models/exam_paper_model.dart';
 import '../widgets/yemeni_exam_header.dart';
@@ -15,7 +16,6 @@ class _MainEditorScreenState extends State<MainEditorScreen> {
   final ExamHeaderData _headerData = ExamHeaderData();
   final List<QuestionItem> _questions = [];
 
-  // القوائم الجاهزة للاختيار
   final List<String> _gradesList = [
     'روضة / تمهيدي',
     'الأول الابتدائي', 'الثاني الابتدائي', 'الثالث الابتدائي', 'الرابع الابتدائي', 'الخامس الابتدائي', 'السادس الابتدائي',
@@ -41,6 +41,16 @@ class _MainEditorScreenState extends State<MainEditorScreen> {
         appBar: AppBar(
           title: const Text('محرر الاختبارات الاحترافي'),
           actions: [
+            IconButton(
+              icon: const Icon(Icons.person_pin),
+              tooltip: 'عن المطور',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AboutScreen()),
+                );
+              },
+            ),
             IconButton(
               icon: const Icon(Icons.print),
               tooltip: 'طباعة الاختبار',
@@ -76,7 +86,6 @@ class _MainEditorScreenState extends State<MainEditorScreen> {
     );
   }
 
-  // تبويب تعديل الكليشة التفصيلي
   Widget _buildHeaderEditorTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(12.0),
@@ -100,7 +109,6 @@ class _MainEditorScreenState extends State<MainEditorScreen> {
           ),
           const Divider(height: 24),
 
-          // اختيار الصف والمرحلة
           DropdownButtonFormField<String>(
             value: _gradesList.contains(_headerData.grade) ? _headerData.grade : _gradesList[10],
             decoration: const InputDecoration(labelText: 'الصف الدراسي', border: OutlineInputBorder()),
@@ -109,7 +117,6 @@ class _MainEditorScreenState extends State<MainEditorScreen> {
           ),
           const SizedBox(height: 12),
 
-          // اختيار نوع الاختبار
           DropdownButtonFormField<String>(
             value: _examTypesList.contains(_headerData.examType) ? _headerData.examType : _examTypesList[1],
             decoration: const InputDecoration(labelText: 'نوع الاختبار', border: OutlineInputBorder()),
@@ -191,7 +198,6 @@ class _MainEditorScreenState extends State<MainEditorScreen> {
     );
   }
 
-  // تبويب إدارة الأسئلة
   Widget _buildQuestionsEditorTab() {
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
@@ -222,7 +228,6 @@ class _MainEditorScreenState extends State<MainEditorScreen> {
     );
   }
 
-  // تبويب المعاينة الحية للورقة الامتحانية
   Widget _buildPaperPreviewTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(12),
@@ -230,7 +235,7 @@ class _MainEditorScreenState extends State<MainEditorScreen> {
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: Colors.white,
             boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, spreadRadius: 2)],
           ),
@@ -246,9 +251,8 @@ class _MainEditorScreenState extends State<MainEditorScreen> {
     );
   }
 
-  // حوار إضافة سؤال جديد
   void _addQuestionDialog() {
-    String qNum = 'س ${Math.min(_questions.length + 1, 99)}';
+    String qNum = 'س ${min(_questions.length + 1, 99)}';
     String qTitle = '';
     double qGrade = 2.0;
     final List<String> subs = [];
@@ -329,63 +333,21 @@ class _MainEditorScreenState extends State<MainEditorScreen> {
     );
   }
 
-  // تفعيل الطباعة
   void _printExam() {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('جاري تجهيز الأمر وإرسال الورقة للطابعة... 🟨')),
     );
   }
 
-  // تفعيل التصدير
   void _exportExam() {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('تم تصدير ورقة الاختبار بنجاح بصيغة PDF وجاهزة للمشاركة! 📄✨')),
     );
   }
 
-  // تفعيل الحفظ
   void _saveExam() {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('تم حفظ نموذج الاختبار في ذاكرة التطبيق بنجاح ✅')),
     );
   }
 }
-AppBar(
-  title: const Text('محرر الاختبارات الاحترافي'),
-  actions: [
-    // زر الانتقال لشاشة المطور
-    IconButton(
-      icon: const Icon(Icons.person_pin),
-      tooltip: 'عن المطور',
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const AboutScreen()),
-        );
-      },
-    ),
-    IconButton(
-      icon: const Icon(Icons.print),
-      tooltip: 'طباعة الاختبار',
-      onPressed: _printExam,
-    ),
-    IconButton(
-      icon: const Icon(Icons.picture_as_pdf),
-      tooltip: 'تصدير PDF / صورة',
-      onPressed: _exportExam,
-    ),
-    IconButton(
-      icon: const Icon(Icons.save),
-      tooltip: 'حفظ الاختبار',
-      onPressed: _saveExam,
-    ),
-  ],
-  bottom: const TabBar(
-    tabs: [
-      Tab(icon: Icon(Icons.edit_note), text: 'بيانات الكليشة'),
-      Tab(icon: Icon(Icons.format_list_numbered), text: 'الأسئلة'),
-      Tab(icon: Icon(Icons.remove_red_eye), text: 'معاينة الورقة'),
-    ],
-  ),
-)
-  
