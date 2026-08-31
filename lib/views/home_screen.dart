@@ -1,112 +1,83 @@
 import 'package:flutter/material.dart';
-import '../core/constants/app_colors.dart';
-import '../models/exam_paper_model.dart';
 import 'main_editor_screen.dart';
+import 'about_screen.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  final List<SavedExamModel> _savedExams = [];
-
-  void _createNewExam() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => MainEditorScreen(
-          onSaveExam: (exam) {
-            setState(() {
-              _savedExams.add(exam);
-            });
-          },
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
       appBar: AppBar(
-        title: const Text('صانع الاختبارات الاحترافي'),
+        title: const Text('صانع الاختبارات اليمنية 🇾🇪'),
         centerTitle: true,
-        backgroundColor: AppColors.darkPurple,
-        elevation: 0,
-        leading: const Icon(Icons.print),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person_pin),
+            tooltip: 'عن المطور',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AboutScreen()),
+              );
+            },
+          ),
+        ],
       ),
-      body: _savedExams.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.assignment_outlined, size: 80, color: Colors.white24),
-                  SizedBox(height: 16),
-                  Text(
-                    'لا توجد اختبارات محفوظة',
-                    style: TextStyle(color: Colors.white70, fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'اضغط على زر (+ إنشاء اختبار جديد) بالأسفل للبدء',
-                    style: TextStyle(color: Colors.white38, fontSize: 13),
-                  ),
-                ],
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Icon(
+              Icons.assignment_outlined,
+              size: 80,
+              color: Colors.blueAccent,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'مرحباً بك في صانع الاختبارات',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'التطبيق الأسهل لتجهيز وتصميم الكليشة وجداول الأسئلة وطباعتها بسهولة.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
+            ),
+            const SizedBox(height: 36),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _savedExams.length,
-              itemBuilder: (context, index) {
-                final exam = _savedExams[index];
-                return Card(
-                  color: AppColors.cardDark,
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: ListTile(
-                    leading: const CircleAvatar(
-                      backgroundColor: AppColors.accentGreen,
-                      child: Icon(Icons.description, color: Colors.white),
-                    ),
-                    title: Text(
-                      '${exam.header.subject} - ${exam.header.examTitle}',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Text(
-                      'المدرسة: ${exam.header.schoolName} | التاريخ: ${exam.date}',
-                      style: const TextStyle(color: Colors.white60, fontSize: 12),
-                    ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.redAccent),
-                      onPressed: () {
-                        setState(() {
-                          _savedExams.removeAt(index);
-                        });
-                      },
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => MainEditorScreen(initialExam: exam),
-                        ),
-                      );
-                    },
-                  ),
+              icon: const Icon(Icons.edit_document),
+              label: const Text('دخول محرر الاختبارات', style: TextStyle(fontSize: 16)),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const MainEditorScreen()),
                 );
               },
             ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _createNewExam,
-        backgroundColor: AppColors.accentGreen,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          'إنشاء اختبار جديد',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              icon: const Icon(Icons.info_outline),
+              label: const Text('عن المطور والمشروع', style: TextStyle(fontSize: 16)),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AboutScreen()),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );
