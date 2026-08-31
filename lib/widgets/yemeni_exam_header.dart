@@ -12,7 +12,7 @@ class YemeniExamHeader extends StatelessWidget {
       textDirection: TextDirection.rtl,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-        margin: const EdgeInsets.bottom(6.0),
+        margin: const EdgeInsets.only(bottom: 6.0),
         decoration: BoxDecoration(
           border: Border.all(color: Colors.black, width: 1.2),
           borderRadius: BorderRadius.circular(4),
