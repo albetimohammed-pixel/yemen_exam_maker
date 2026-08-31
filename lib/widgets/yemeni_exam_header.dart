@@ -2,87 +2,99 @@ import 'package:flutter/material.dart';
 import '../models/exam_paper_model.dart';
 
 class YemeniExamHeader extends StatelessWidget {
-  final YemeniHeaderModel header;
+  final ExamHeaderData headerData;
 
-  const YemeniExamHeader({Key? key, required this.header}) : super(key: key);
+  const YemeniExamHeader({Key? key, required this.headerData}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // الكليشة البيضاوية الثلاثية
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              flex: 3,
-              child: _buildOvalBox(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildText('المادة : ${header.subject}'),
-                    _buildText('اليوم: ${header.day}'),
-                    _buildText('التاريخ ${header.date}'),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 4),
-            Expanded(
-              flex: 4,
-              child: _buildOvalBox(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      header.examTitle,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 9, color: Colors.black),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${header.gradeLevel} - ${header.academicYear}',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 8, color: Colors.black87),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 4),
-            Expanded(
-              flex: 3,
-              child: _buildOvalBox(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildText(header.schoolName, bold: true),
-                    _buildText(header.directorate),
-                    _buildText('الزمن : ${header.duration}'),
-                  ],
-                ),
-              ),
-            ),
-          ],
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+        margin: const EdgeInsets.bottom(6.0),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.black, width: 1.2),
+          borderRadius: BorderRadius.circular(4),
         ),
-        const SizedBox(height: 6),
-        // شريط اسم الطالب
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: Colors.black, width: 1.2)),
+        child: _buildHeaderContent(),
+      ),
+    );
+  }
+
+  Widget _buildHeaderContent() {
+    switch (headerData.style) {
+      case HeaderStyle.ovalTriple:
+        return _buildOvalStyle();
+      case HeaderStyle.modernMinimal:
+        return _buildModernStyle();
+      case HeaderStyle.republicEmblem:
+      default:
+        return _buildEmblemStyle();
+    }
+  }
+
+  // تصميم 1: مع شعار الجمهورية الرسمية (مضغوط وموفر للمساحة)
+  Widget _buildEmblemStyle() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAlignment.center,
+      children: [
+        // اليمين: الدولة والمدرسة
+        Expanded(
+          flex: 3,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(headerData.republic, style: const TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Colors.black)),
+              Text(headerData.ministry, style: const TextStyle(fontSize: 8, color: Colors.black)),
+              Text(headerData.directorate, style: const TextStyle(fontSize: 8, color: Colors.black)),
+              Text('مدرسة: ${headerData.schoolName}', style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.black)),
+            ],
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text(
-                'اسم الطالب : ...........................................................',
-                style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.black),
+        ),
+        // الوسط: الشعار ونوع الاختبار
+        Expanded(
+          flex: 3,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (headerData.showEmblem) ...[
+                CustomPaint(
+                  size: const Size(28, 20),
+                  painter: YemenEmblemPainter(),
+                ),
+                const SizedBox(height: 2),
+              ],
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.black, width: 0.8),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: Text(
+                  headerData.examType,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.black),
+                ),
               ),
-              Text(
-                'الشعبة (    )',
-                style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.black),
-              ),
+              const SizedBox(height: 2),
+              Text('العام الدراسي: ${headerData.academicYear}', style: const TextStyle(fontSize: 7.5, color: Colors.black)),
+            ],
+          ),
+        ),
+        // اليسار: المادة والصف والتاريخ
+        Expanded(
+          flex: 3,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('المادة: ${headerData.subject}', style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.black)),
+              Text('الصف: ${headerData.grade} (${headerData.section})', style: const TextStyle(fontSize: 8.5, color: Colors.black)),
+              Text('التاريخ: ${headerData.date}', style: const TextStyle(fontSize: 8, color: Colors.black)),
+              Text('الزمن: ${headerData.duration}', style: const TextStyle(fontSize: 8, color: Colors.black)),
             ],
           ),
         ),
@@ -90,26 +102,92 @@ class YemeniExamHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildOvalBox({required Widget child}) {
+  // تصميم 2: البيضاوي الكلاسيكي
+  Widget _buildOvalStyle() {
     return Container(
-      height: 60,
       padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.black, width: 1.2),
-        borderRadius: BorderRadius.circular(25),
+      decoration: BoxDecoration(border: Border.all(color: Colors.black, width: 0.8)),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(headerData.republic, style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.black)),
+              Text('مدرسة: ${headerData.schoolName}', style: const TextStyle(fontSize: 8.5, color: Colors.black)),
+              Text('المادة: ${headerData.subject}', style: const TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Colors.black)),
+            ],
+          ),
+          Column(
+            children: [
+              Text(headerData.examType, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.black)),
+              Text('الصف: ${headerData.grade}', style: const TextStyle(fontSize: 8, color: Colors.black)),
+            ],
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text('التاريخ: ${headerData.date}', style: const TextStyle(fontSize: 8, color: Colors.black)),
+              Text('الزمن: ${headerData.duration}', style: const TextStyle(fontSize: 8, color: Colors.black)),
+              Text('الشعبة: ${headerData.section}', style: const TextStyle(fontSize: 8, color: Colors.black)),
+            ],
+          ),
+        ],
       ),
-      child: Center(child: child),
     );
   }
 
-  Widget _buildText(String text, {bool bold = false}) {
-    return Text(
-      text,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: TextStyle(fontSize: 8, fontWeight: bold ? FontWeight.bold : FontWeight.normal, color: Colors.black),
+  // تصميم 3: حديث وعصري
+  Widget _buildModernStyle() {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('${headerData.republic} - ${headerData.schoolName}', style: const TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Colors.black)),
+            Text('${headerData.examType} - ${headerData.academicYear}', style: const TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Colors.black)),
+          ],
+        ),
+        const Divider(color: Colors.black, height: 4, thickness: 0.8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('المادة: ${headerData.subject}', style: const TextStyle(fontSize: 8, color: Colors.black)),
+            Text('الصف: ${headerData.grade} (${headerData.section})', style: const TextStyle(fontSize: 8, color: Colors.black)),
+            Text('الزمن: ${headerData.duration}', style: const TextStyle(fontSize: 8, color: Colors.black)),
+            Text('التاريخ: ${headerData.date}', style: const TextStyle(fontSize: 8, color: Colors.black)),
+          ],
+        ),
+      ],
     );
   }
 }
 
+// رسم كودي لشعار النسر الجمهوري لمنع الأخطاء
+class YemenEmblemPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      color = Colors.brown.shade800
+      style = PaintingStyle.fill;
+
+    final path = Path();
+    // أجنحة النسر والدرع في الوسط
+    path.moveTo(size.width * 0.5, 0);
+    path.lineTo(size.width * 0.2, size.height * 0.4);
+    path.lineTo(0, size.height * 0.3);
+    path.lineTo(size.width * 0.15, size.height * 0.7);
+    path.lineTo(size.width * 0.35, size.height * 0.65);
+    path.lineTo(size.width * 0.5, size.height);
+    path.lineTo(size.width * 0.65, size.height * 0.65);
+    path.lineTo(size.width * 0.85, size.height * 0.7);
+    path.lineTo(size.width, size.height * 0.3);
+    path.lineTo(size.width * 0.8, size.height * 0.4);
+    path.close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
