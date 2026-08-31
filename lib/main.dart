@@ -12,10 +12,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'المحرر المدرسي Pro 39',
+      title: 'صانع الاختبارات الاحترافي',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkEditorTheme,
-      // التوجيه المباشر للشاشة الرئيسية (HomeScreen)
       home: const Directionality(
         textDirection: TextDirection.rtl,
         child: HomeScreen(),
