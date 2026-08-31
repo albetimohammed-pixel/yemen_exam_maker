@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/exam_paper_model.dart';
 import '../widgets/yemeni_exam_header.dart';
 import '../widgets/exam_paper_table.dart';
+import 'about_screen.dart';
 
 class MainEditorScreen extends StatefulWidget {
   const MainEditorScreen({Key? key}) : super(key: key);
@@ -349,3 +350,42 @@ class _MainEditorScreenState extends State<MainEditorScreen> {
     );
   }
 }
+AppBar(
+  title: const Text('محرر الاختبارات الاحترافي'),
+  actions: [
+    // زر الانتقال لشاشة المطور
+    IconButton(
+      icon: const Icon(Icons.person_pin),
+      tooltip: 'عن المطور',
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const AboutScreen()),
+        );
+      },
+    ),
+    IconButton(
+      icon: const Icon(Icons.print),
+      tooltip: 'طباعة الاختبار',
+      onPressed: _printExam,
+    ),
+    IconButton(
+      icon: const Icon(Icons.picture_as_pdf),
+      tooltip: 'تصدير PDF / صورة',
+      onPressed: _exportExam,
+    ),
+    IconButton(
+      icon: const Icon(Icons.save),
+      tooltip: 'حفظ الاختبار',
+      onPressed: _saveExam,
+    ),
+  ],
+  bottom: const TabBar(
+    tabs: [
+      Tab(icon: Icon(Icons.edit_note), text: 'بيانات الكليشة'),
+      Tab(icon: Icon(Icons.format_list_numbered), text: 'الأسئلة'),
+      Tab(icon: Icon(Icons.remove_red_eye), text: 'معاينة الورقة'),
+    ],
+  ),
+)
+  
