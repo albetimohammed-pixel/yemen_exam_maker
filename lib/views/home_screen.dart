@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/constants/app_colors.dart';
+import '../models/exam_paper_model.dart';
 import 'main_editor_screen.dart';
-import 'user_guide_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -11,153 +11,104 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // قائمة تجريبية للاختبارات السابقة
-  final List<Map<String, String>> _previousExams = [
-    {
-      'title': 'اختبار الشهر الأول - الرياضيات',
-      'subject': 'الرياضيات',
-      'date': '2026/08/25',
-    },
-    {
-      'title': 'اختبار منتصف الفصل - العلوم',
-      'subject': 'العلوم العامة',
-      'date': '2026/08/28',
-    },
-  ];
+  final List<SavedExamModel> _savedExams = [];
+
+  void _createNewExam() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MainEditorScreen(
+          onSaveExam: (exam) {
+            setState(() {
+              _savedExams.add(exam);
+            });
+          },
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
       appBar: AppBar(
-        title: const Text('المحرر المدرسي Pro 39'),
+        title: const Text('صانع الاختبارات الاحترافي'),
         centerTitle: true,
         backgroundColor: AppColors.darkPurple,
         elevation: 0,
-        // زر المعلومات والدليل في الأعلى
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.info_outline),
-            tooltip: 'معلومات التطبيق والدليل',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => UserGuideScreen()),
-              );
-            },
-          ),
-        ],
+        leading: const Icon(Icons.print),
       ),
-      body: _previousExams.isEmpty ? _buildEmptyState() : _buildExamsList(),
-
-      // موقع الزر العائم في أسفل اليمين (في بيئة RTL)
-      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
+      body: _savedExams.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Icon(Icons.assignment_outlined, size: 80, color: Colors.white24),
+                  SizedBox(height: 16),
+                  Text(
+                    'لا توجد اختبارات محفوظة',
+                    style: TextStyle(color: Colors.white70, fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'اضغط على زر (+ إنشاء اختبار جديد) بالأسفل للبدء',
+                    style: TextStyle(color: Colors.white38, fontSize: 13),
+                  ),
+                ],
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: _savedExams.length,
+              itemBuilder: (context, index) {
+                final exam = _savedExams[index];
+                return Card(
+                  color: AppColors.cardDark,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: ListTile(
+                    leading: const CircleAvatar(
+                      backgroundColor: AppColors.accentGreen,
+                      child: Icon(Icons.description, color: Colors.white),
+                    ),
+                    title: Text(
+                      '${exam.header.subject} - ${exam.header.examTitle}',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      'المدرسة: ${exam.header.schoolName} | التاريخ: ${exam.date}',
+                      style: const TextStyle(color: Colors.white60, fontSize: 12),
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.redAccent),
+                      onPressed: () {
+                        setState(() {
+                          _savedExams.removeAt(index);
+                        });
+                      },
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => MainEditorScreen(initialExam: exam),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const MainEditorScreen()),
-          );
-        },
+        onPressed: _createNewExam,
         backgroundColor: AppColors.accentGreen,
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text(
-          'إضافة اختبار',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 15,
-          ),
+          'إنشاء اختبار جديد',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
         ),
       ),
     );
   }
-
-  // واجهة فارغة في حال لا توجد اختبارات محفوطة
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Icon(Icons.note_add_outlined, size: 80, color: Colors.white24),
-          SizedBox(height: 16),
-          Text(
-            'لا توجد اختبارات سابقة',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'اضغط على زر "إضافة اختبار" لإنشاء أول اختبار لك',
-            style: TextStyle(color: Colors.white38, fontSize: 14),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // قائمة عرض الاختبارات السابقة
-  Widget _buildExamsList() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _previousExams.length,
-      itemBuilder: (context, index) {
-        final exam = _previousExams[index];
-        return Card(
-          color: AppColors.cardDark,
-          margin: const EdgeInsets.only(bottom: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: const BorderSide(color: Colors.white12),
-          ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            leading: CircleAvatar(
-              backgroundColor: AppColors.primaryPurple.withOpacity(0.3),
-              child: const Icon(Icons.description, color: AppColors.accentGreen),
-            ),
-            title: Text(
-              exam['title'] ?? '',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            subtitle: Text(
-              'المادة: ${exam['subject']}  •  التاريخ: ${exam['date']}',
-              style: const TextStyle(color: Colors.white60, fontSize: 12),
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit, color: AppColors.accentGreen),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const MainEditorScreen(),
-                      ),
-                    );
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                  onPressed: () {
-                    setState(() {
-                      _previousExams.removeAt(index);
-                    });
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
 }
-
