@@ -11,7 +11,6 @@ class ExamPaperTable extends StatelessWidget {
     this.closingText = 'مع تمنياتي لكم بالتوفيق والنجاح',
   }) : super(key: key);
 
-  @style
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -140,4 +139,3 @@ class ExamPaperTable extends StatelessWidget {
 
   Widget _buildDivider() => Container(width: 1, color: Colors.black);
 }
-
