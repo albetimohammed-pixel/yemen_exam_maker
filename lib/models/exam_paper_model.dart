@@ -73,8 +73,8 @@ class QuestionItem {
     this.answerLines = 3,
     List<String>? options,
     List<String>? statements,
-    this.tableRows = 2,
-    this.tableCols = 2,
+    int? tableRows,
+    int? tableCols,
     List<List<String>>? tableData,
   })  : options = options ?? ['الخيار الأول', 'الخيار الثاني', 'الخيار الثالث'],
         statements = statements ?? ['العبارة الأولى', 'العبارة الثانية'],
@@ -82,5 +82,7 @@ class QuestionItem {
             [
               ['م', 'العنصر الأول', 'العنصر الثاني'],
               ['1', 'بيان 1', 'بيان 2']
-            ];
+            ],
+        tableRows = tableRows ?? (tableData != null ? tableData.length : 2),
+        tableCols = tableCols ?? (tableData != null && tableData.isNotEmpty ? tableData[0].length : 3);
 }
