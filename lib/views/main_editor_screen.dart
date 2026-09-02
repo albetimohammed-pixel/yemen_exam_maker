@@ -10,17 +10,9 @@ class Question {
   String title;
   QuestionType type;
   double score;
-
-  // خيارات السؤال النصي
   int answerLines;
-
-  // خيارات اختيار من متعدد
   List<String> options;
-
-  // خيارات صح أو خطأ
   List<String> statements;
-
-  // خيارات الجدول التفاعلي
   int rows;
   int cols;
   List<List<String>> tableData;
@@ -64,16 +56,16 @@ class _MainEditorScreenState extends State<MainEditorScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  // controllers الكليشة الرسمية المطابقة للصورة
+  // controllers كليشة الاختبار المطابقة للصورة تماماً
   final _schoolController = TextEditingController(text: 'ثانوية المكلا النموذجية للبنين\nمديرية المكلا');
-  final _subjectController = TextEditingController(text: 'المادة: المجتمع');
-  final _gradeController = TextEditingController(text: 'اختبار الشهري الثاني الفصل الدراسي الثاني\nلصف الأول الثانوي - للعام 2025-2026م');
-  final _examTypeController = TextEditingController(text: 'اليوم: الاثنين\nالتاريخ: 2026/4/20م\nالزمن: حصة');
-
+  final _timeController = TextEditingController(text: 'الزمن : حصة');
+  final _examTitleController = TextEditingController(text: 'اختبار الشهري الثاني الفصل الدراسي الثاني\nللصف الأول الثانوي - للعام 2025-2026م');
+  final _subjectController = TextEditingController(text: 'المادة : المجتمع');
+  final _dayController = TextEditingController(text: 'اليوم : الاثنين');
+  final _dateController = TextEditingController(text: 'التاريخ : 2026/4/20م');
   final _studentNameController = TextEditingController();
-  final _sectionController = TextEditingController();
+  final _classSectionController = TextEditingController();
 
-  // قائمة الأسئلة
   final List<Question> _questions = [];
 
   @override
@@ -86,19 +78,20 @@ class _MainEditorScreenState extends State<MainEditorScreen>
   void dispose() {
     _tabController.dispose();
     _schoolController.dispose();
+    _timeController.dispose();
+    _examTitleController.dispose();
     _subjectController.dispose();
-    _gradeController.dispose();
-    _examTypeController.dispose();
+    _dayController.dispose();
+    _dateController.dispose();
     _studentNameController.dispose();
-    _sectionController.dispose();
+    _classSectionController.dispose();
     super.dispose();
   }
 
-  // دالة تصدير وطباعة الاختبار (PDF / Print)
   void _exportOrPrintExam() {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('جاري تجهيز الاختبار للطباعة والتصدير كـ PDF...'),
+        content: Text('جاري تصدير ورقة الاختبار بالمطابقة الرسمية...'),
         duration: Duration(seconds: 2),
       ),
     );
@@ -110,7 +103,7 @@ class _MainEditorScreenState extends State<MainEditorScreen>
       textDirection: TextDirection.rtl,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('محرر الاختبارات'),
+          title: const Text('محرر الاختبارات الرسمي'),
           centerTitle: true,
           actions: [
             IconButton(
@@ -122,9 +115,9 @@ class _MainEditorScreenState extends State<MainEditorScreen>
           bottom: TabBar(
             controller: _tabController,
             tabs: const [
-              Tab(icon: Icon(Icons.description), text: 'الكليشة'),
-              Tab(icon: Icon(Icons.list_alt), text: 'الأسئلة'),
-              Tab(icon: Icon(Icons.print), text: 'المعاينة والطباعة'),
+              Tab(icon: Icon(Icons.description), text: 'بيانات الترويسة'),
+              Tab(icon: Icon(Icons.list_alt), text: 'إدارة الأسئلة'),
+              Tab(icon: Icon(Icons.print), text: 'معاينة ورقة الاختبار'),
             ],
           ),
         ),
@@ -143,7 +136,7 @@ class _MainEditorScreenState extends State<MainEditorScreen>
               return FloatingActionButton.extended(
                 onPressed: () => _openQuestionDialog(),
                 icon: const Icon(Icons.add),
-                label: const Text('إضافة سؤال'),
+                label: const Text('إضافة سؤال جديد'),
               );
             }
             return const SizedBox.shrink();
@@ -153,51 +146,54 @@ class _MainEditorScreenState extends State<MainEditorScreen>
     );
   }
 
-  // --------------------------------------------------------------------------
-  // التبويب الأول: الكليشة (بيانات الهيدر)
-  // --------------------------------------------------------------------------
   Widget _buildHeaderTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('بيانات كليشة الاختبار الرسمية', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text('تعديل حقول كليشة الاختبار الرسمية', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
           TextField(
             controller: _schoolController,
             maxLines: 2,
-            decoration: const InputDecoration(labelText: 'ترويسة المدرسة (يمين)', border: OutlineInputBorder()),
+            decoration: const InputDecoration(labelText: 'بيانات المدرسة (اليمين)', border: OutlineInputBorder()),
           ),
           const SizedBox(height: 12),
           TextField(
-            controller: _gradeController,
+            controller: _timeController,
+            decoration: const InputDecoration(labelText: 'الزمن (تحت المدرسة)', border: OutlineInputBorder()),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _examTitleController,
             maxLines: 2,
-            decoration: const InputDecoration(labelText: 'عنوان الاختبار والعام الدراسي (وسط)', border: OutlineInputBorder()),
+            decoration: const InputDecoration(labelText: 'عنوان الاختبار (المنتصف)', border: OutlineInputBorder()),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _subjectController,
-            decoration: const InputDecoration(labelText: 'المادة (يسار)', border: OutlineInputBorder()),
+            decoration: const InputDecoration(labelText: 'المادة (اليسار)', border: OutlineInputBorder()),
           ),
           const SizedBox(height: 12),
           TextField(
-            controller: _examTypeController,
-            maxLines: 3,
-            decoration: const InputDecoration(labelText: 'بيانات اليوم وتاريخ والزمن (يسار)', border: OutlineInputBorder()),
+            controller: _dayController,
+            decoration: const InputDecoration(labelText: 'اليوم (اليسار)', border: OutlineInputBorder()),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _dateController,
+            decoration: const InputDecoration(labelText: 'التاريخ (اليسار)', border: OutlineInputBorder()),
           ),
         ],
       ),
     );
   }
 
-  // --------------------------------------------------------------------------
-  // التبويب الثاني: إدارة الأسئلة
-  // --------------------------------------------------------------------------
   Widget _buildQuestionsTab() {
     if (_questions.isEmpty) {
       return const Center(
-        child: Text('لا توجد أسئلة مضافة حتى الآن. اضغط على زر + لإضافة سؤال.'),
+        child: Text('لا توجد أسئلة مضافة. اضغط على زر + لإضافة سؤال ورقي.'),
       );
     }
     return ReorderableListView.builder(
@@ -218,7 +214,7 @@ class _MainEditorScreenState extends State<MainEditorScreen>
           child: ListTile(
             leading: CircleAvatar(child: Text('${index + 1}')),
             title: Text(q.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-            subtitle: Text('النوع: ${_getTypeName(q.type)} | الدرجة: ${q.score}'),
+            subtitle: Text('الدرجة: ${q.score}'),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -243,11 +239,11 @@ class _MainEditorScreenState extends State<MainEditorScreen>
   }
 
   // --------------------------------------------------------------------------
-  // التبويب الثالث: المعاينة والطباعة (مطابق تماماً للصورة)
+  // تبويب المعاينة المطابق 100% لتصميم الصورة الرسمية
   // --------------------------------------------------------------------------
   Widget _buildPreviewTab() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(12.0),
       child: Column(
         children: [
           ElevatedButton.icon(
@@ -257,10 +253,11 @@ class _MainEditorScreenState extends State<MainEditorScreen>
               foregroundColor: Colors.white,
             ),
             icon: const Icon(Icons.picture_as_pdf),
-            label: const Text('تصدير الاختبار كـ PDF / طباعة نهائية', style: TextStyle(fontSize: 16)),
+            label: const Text('تصدير الاختبار كـ PDF / طباعة مطابقة للصورة', style: TextStyle(fontSize: 16)),
             onPressed: _exportOrPrintExam,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+          // إطار ورقة الاختبار الخارجية المماثلة للصورة
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -270,134 +267,131 @@ class _MainEditorScreenState extends State<MainEditorScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // ترويسة الاختبار المطابقة لصورة النموذج
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                // ترويسة الاختبار المطابقة للصورة تماماً
+                Table(
+                  border: TableBorder.all(color: Colors.transparent),
+                  columnWidths: const {
+                    0: FlexColumnWidth(1.2),
+                    1: FlexColumnWidth(1.8),
+                    2: FlexColumnWidth(1.2),
+                  },
                   children: [
-                    // اليمين: المدرسة
-                    Expanded(
-                      flex: 3,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(border: Border.all(color: Colors.black, width: 0.8)),
-                        child: Text(
-                          _schoolController.text,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+                    TableRow(
+                      children: [
+                        // اليمين: المدرسة والزمن
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(_schoolController.text, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 2),
+                            Text(_timeController.text, style: const TextStyle(fontSize: 11)),
+                          ],
                         ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // الوسط: اسم الاختبار
-                    Expanded(
-                      flex: 5,
-                      child: Column(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        // المنتصف: العنوان الإطاري
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
                               border: Border.all(color: Colors.black, width: 1),
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              _gradeController.text,
+                              _examTitleController.text,
                               textAlign: TextAlign.center,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // اليسار: المادة واليوم والتاريخ والزمن
-                    Expanded(
-                      flex: 3,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(border: Border.all(color: Colors.black, width: 0.8)),
-                        child: Text(
-                          '${_subjectController.text}\n${_examTypeController.text}',
-                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
                         ),
-                      ),
+                        // اليسار: المادة، اليوم، التاريخ
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(_subjectController.text, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                            Text(_dayController.text, style: const TextStyle(fontSize: 11)),
+                            Text(_dateController.text, style: const TextStyle(fontSize: 11)),
+                          ],
+                        ),
+                      ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-
+                const SizedBox(height: 8),
                 // سطر اسم الطالب والشعبة
                 Row(
                   children: [
-                    const Text('اسم الطالب: ........................................................................', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                    const SizedBox(width: 10),
-                    const Text('الشعبة: (         )', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    Expanded(
+                      flex: 4,
+                      child: Text('اسم الطالب : ________________________________________', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text('الشعبة (     )', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 6),
+                const Divider(color: Colors.black, thickness: 1.5, height: 16),
 
-                // جدول الأسئلة الرئيسي المطابق تماماً لخطوط وإطار النموذج
+                // جدول الأسئلة الرئيسي (عمود السؤال وعمود الدرجة)
                 Table(
                   border: TableBorder.all(color: Colors.black, width: 1),
                   columnWidths: const {
-                    0: FixedColumnWidth(40),  // عمود رقم السؤال
-                    1: FlexColumnWidth(1),    // عمود نص الأسئلة
-                    2: FixedColumnWidth(60),  // عمود الدرجة
+                    0: FlexColumnWidth(5.5),
+                    1: FlexColumnWidth(0.8),
                   },
                   children: [
-                    // سطر التوجيه العلوي داخل الجدول
+                    // صف العنوان الإرشادي داخل الجدول
                     TableRow(
                       decoration: BoxDecoration(color: Colors.grey.shade200),
                       children: [
-                        const TableCell(child: Padding(padding: EdgeInsets.all(4.0), child: Text('السؤال', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)))),
-                        const TableCell(child: Padding(padding: EdgeInsets.all(6.0), child: Text('* أجب عن جميع الأسئلة الآتية :', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)))),
-                        const TableCell(child: Padding(padding: EdgeInsets.all(4.0), child: Text('الدرجة', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)))),
+                        const Padding(
+                          padding: EdgeInsets.all(6.0),
+                          child: Text(
+                            '* أجب عن جميع الأسئلة الآتية :',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.all(6.0),
+                          child: Text(
+                            'الدرجة',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                        ),
                       ],
                     ),
-                    // محتوى الأسئلة مدمج داخل الجدول
+                    // صف محتوى الأسئلة
                     TableRow(
                       children: [
-                        // رقم السؤال الرئيسي (مثال: 1)
-                        const TableCell(
-                          verticalAlignment: TableCellVerticalAlignment.middle,
-                          child: Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: Text('1', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (_questions.isEmpty)
+                                const Padding(
+                                  padding: EdgeInsets.all(20.0),
+                                  child: Center(child: Text('أضف أسئلة لتظهر هنا بتنسيق الورقة الرسمية')),
+                                )
+                              else
+                                ..._questions.asMap().entries.map((entry) {
+                                  return _buildExactQuestionStyle(entry.key + 1, entry.value);
+                                }).toList(),
+                            ],
                           ),
                         ),
-                        // نص الأسئلة والفرعيات
-                        TableCell(
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (_questions.isEmpty)
-                                  const Padding(
-                                    padding: EdgeInsets.all(20.0),
-                                    child: Center(child: Text('لا توجد أسئلة مضافة. أضف أسئلة من تبويب "الأسئلة".', style: TextStyle(color: Colors.grey))),
-                                  )
-                                else
-                                  ..._questions.asMap().entries.map((entry) {
-                                    return _buildQuestionRowItem(entry.key + 1, entry.value);
-                                  }).toList(),
-                              ],
-                            ),
-                          ),
-                        ),
-                        // عمود الدرجات الكلية المقابلة
-                        TableCell(
-                          verticalAlignment: TableCellVerticalAlignment.middle,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: _questions.map((q) {
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 20.0),
-                                  child: Text('${q.score}', textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                                );
-                              }).toList(),
-                            ),
+                        // عمود الدرجات الجانبي المماثل للصورة
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 20.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: _questions.map((q) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 35.0),
+                                child: Text('${q.score.toInt()}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                              );
+                            }).toList(),
                           ),
                         ),
                       ],
@@ -412,13 +406,13 @@ class _MainEditorScreenState extends State<MainEditorScreen>
     );
   }
 
-  Widget _buildQuestionRowItem(int number, Question q) {
-    // ترقيم الفرعيات بالحروف العربية (أ، ب، ج، د) بناءً على الترتيب
-    const arabicLetters = ['أ', 'ب', 'ج', 'د', 'هـ', 'و', 'ز', 'ح'];
+  Widget _buildExactQuestionStyle(int number, Question q) {
+    // تحويل الرقم إلى الحروف العربية مثل الصورة (أ، ب، ج، د)
+    const arabicLetters = ['أ', 'ب', 'ج', 'د', 'هـ', 'و'];
     String letter = (number - 1 < arabicLetters.length) ? arabicLetters[number - 1] : '$number';
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
+      padding: const EdgeInsets.only(bottom: 20.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -428,7 +422,7 @@ class _MainEditorScreenState extends State<MainEditorScreen>
           if (q.type == QuestionType.text) ...[
             for (int i = 0; i < q.answerLines; i++)
               Container(
-                margin: const EdgeInsets.symmetric(vertical: 4),
+                margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 15),
                 decoration: const BoxDecoration(
                   border: Border(bottom: BorderSide(color: Colors.black54, style: BorderStyle.solid, width: 0.8)),
                 ),
@@ -436,46 +430,56 @@ class _MainEditorScreenState extends State<MainEditorScreen>
               )
           ]
           else if (q.type == QuestionType.mcq) ...[
-            Wrap(
-              spacing: 20,
-              runSpacing: 6,
-              children: q.options.map((opt) => Text('⚪ $opt', style: const TextStyle(fontSize: 12))).toList(),
+            Padding(
+              padding: const EdgeInsets.only(right: 15.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: q.options.map((opt) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 3.0),
+                  child: Text('• $opt'),
+                )).toList(),
+              ),
             )
           ]
           else if (q.type == QuestionType.trueFalse) ...[
-            Column(
-              children: q.statements.map((stmt) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 3.0),
-                  child: Row(
-                    children: [
-                      Expanded(child: Text('• $stmt', style: const TextStyle(fontSize: 12))),
-                      const Text('(   )', style: TextStyle(fontSize: 12)),
-                    ],
-                  ),
-                );
-              }).toList(),
+            Padding(
+              padding: const EdgeInsets.only(right: 15.0),
+              child: Column(
+                children: q.statements.map((stmt) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 3.0),
+                    child: Row(
+                      children: [
+                        Expanded(child: Text('• $stmt')),
+                        const Text('(   )'),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
             )
           ]
           else if (q.type == QuestionType.table) ...[
-            Table(
-              border: TableBorder.all(color: Colors.black, width: 0.8),
-              children: List.generate(q.rows, (rIdx) {
-                return TableRow(
-                  children: List.generate(q.cols, (cIdx) {
-                    return Padding(
-                      padding: const EdgeInsets.all(6.0),
-                      child: Text(
-                        q.tableData.length > rIdx && q.tableData[rIdx].length > cIdx
-                            ? q.tableData[rIdx][cIdx]
-                            : '',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 11),
-                      ),
-                    );
-                  }),
-                );
-              }),
+            Padding(
+              padding: const EdgeInsets.only(right: 15.0),
+              child: Table(
+                border: TableBorder.all(color: Colors.black54),
+                children: List.generate(q.rows, (rIdx) {
+                  return TableRow(
+                    children: List.generate(q.cols, (cIdx) {
+                      return Padding(
+                        padding: const EdgeInsets.all(6.0),
+                        child: Text(
+                          q.tableData.length > rIdx && q.tableData[rIdx].length > cIdx
+                              ? q.tableData[rIdx][cIdx]
+                              : '',
+                          textAlign: TextAlign.center,
+                        ),
+                      );
+                    }),
+                  );
+                }),
+              ),
             )
           ],
         ],
@@ -483,17 +487,13 @@ class _MainEditorScreenState extends State<MainEditorScreen>
     );
   }
 
-  // --------------------------------------------------------------------------
-  // نافذة إضافة وتعديل الأسئلة المتقدمة (_openQuestionDialog)
-  // --------------------------------------------------------------------------
   void _openQuestionDialog({Question? existingQuestion, int? index}) {
     final isEditing = existingQuestion != null;
-
     final titleController = TextEditingController(text: isEditing ? existingQuestion.title : '');
-    final scoreController = TextEditingController(text: isEditing ? existingQuestion.score.toString() : '6.0');
+    final scoreController = TextEditingController(text: isEditing ? existingQuestion.score.toString() : '6');
     QuestionType selectedType = isEditing ? existingQuestion.type : QuestionType.text;
-
     int lines = isEditing ? existingQuestion.answerLines : 3;
+
     List<TextEditingController> optionControllers = isEditing && existingQuestion.options.isNotEmpty
         ? existingQuestion.options.map((o) => TextEditingController(text: o)).toList()
         : [TextEditingController(), TextEditingController()];
@@ -519,7 +519,7 @@ class _MainEditorScreenState extends State<MainEditorScreen>
             return Directionality(
               textDirection: TextDirection.rtl,
               child: AlertDialog(
-                title: Text(isEditing ? 'تعديل فقرة السؤال' : 'إضافة فقرة جديدة (أ، ب، ج...)'),
+                title: Text(isEditing ? 'تعديل السؤال الورقي' : 'إضافة سؤال ورقي جديد'),
                 content: SingleChildScrollView(
                   child: SizedBox(
                     width: MediaQuery.of(context).size.width * 0.8,
@@ -529,12 +529,12 @@ class _MainEditorScreenState extends State<MainEditorScreen>
                       children: [
                         DropdownButtonFormField<QuestionType>(
                           value: selectedType,
-                          decoration: const InputDecoration(labelText: 'نوع الفقرة', border: OutlineInputBorder()),
+                          decoration: const InputDecoration(labelText: 'نوع السؤال', border: OutlineInputBorder()),
                           items: const [
-                            DropdownMenuItem(value: QuestionType.text, child: Text('سؤال نصي مع أسطر إجابة فارغة')),
+                            DropdownMenuItem(value: QuestionType.text, child: Text('سؤال مقالي / فراغات')),
                             DropdownMenuItem(value: QuestionType.mcq, child: Text('اختيار من متعدد')),
-                            DropdownMenuItem(value: QuestionType.trueFalse, child: Text('صح أو خطأ (عبارات فقرات)')),
-                            DropdownMenuItem(value: QuestionType.table, child: Text('جدول تفاعلي داخل السؤال')),
+                            DropdownMenuItem(value: QuestionType.trueFalse, child: Text('صح أو خطأ')),
+                            DropdownMenuItem(value: QuestionType.table, child: Text('جدول تفاعلي')),
                           ],
                           onChanged: (val) {
                             if (val != null) setDialogState(() => selectedType = val);
@@ -543,14 +543,13 @@ class _MainEditorScreenState extends State<MainEditorScreen>
                         const SizedBox(height: 12),
                         TextField(
                           controller: titleController,
-                          maxLines: 2,
-                          decoration: const InputDecoration(labelText: 'نص الفرع (مثل: أ) أكمل الفراغات الآتية...)', border: OutlineInputBorder()),
+                          decoration: const InputDecoration(labelText: 'نص الفقرة أو السؤال', border: OutlineInputBorder()),
                         ),
                         const SizedBox(height: 12),
                         TextField(
                           controller: scoreController,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(labelText: 'درجة هذا الفرع (تظهر على اليسار)', border: OutlineInputBorder()),
+                          decoration: const InputDecoration(labelText: 'الدرجة المخصصة في العمود الجانبي', border: OutlineInputBorder()),
                         ),
                         const SizedBox(height: 16),
                         const Divider(),
@@ -558,10 +557,10 @@ class _MainEditorScreenState extends State<MainEditorScreen>
                         if (selectedType == QuestionType.text) ...[
                           Row(
                             children: [
-                              const Text('عدد أسطر الإجابة الفارغة: '),
+                              const Text('عدد أسطر الفراغات: '),
                               DropdownButton<int>(
                                 value: lines,
-                                items: [1, 2, 3, 4, 5, 6, 8].map((l) {
+                                items: [1, 2, 3, 4, 5, 6].map((l) {
                                   return DropdownMenuItem(value: l, child: Text('$l أسطر'));
                                 }).toList(),
                                 onChanged: (val) {
@@ -571,7 +570,7 @@ class _MainEditorScreenState extends State<MainEditorScreen>
                             ],
                           )
                         ] else if (selectedType == QuestionType.mcq) ...[
-                          const Text('خيارات الإجابة:', style: TextStyle(fontWeight: FontWeight.bold)),
+                          const Text('الخيارات:', style: TextStyle(fontWeight: FontWeight.bold)),
                           ...optionControllers.asMap().entries.map((e) {
                             final i = e.key;
                             return Padding(
@@ -604,7 +603,7 @@ class _MainEditorScreenState extends State<MainEditorScreen>
                             },
                           ),
                         ] else if (selectedType == QuestionType.trueFalse) ...[
-                          const Text('العبارات والفقرات:', style: TextStyle(fontWeight: FontWeight.bold)),
+                          const Text('العبارات:', style: TextStyle(fontWeight: FontWeight.bold)),
                           ...tfControllers.asMap().entries.map((e) {
                             final i = e.key;
                             return Padding(
@@ -672,6 +671,28 @@ class _MainEditorScreenState extends State<MainEditorScreen>
                               ),
                             ],
                           ),
+                          const SizedBox(height: 10),
+                          const Text('محتوى الخلايا:', style: TextStyle(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 6),
+                          for (int r = 0; r < rows; r++)
+                            Row(
+                              children: [
+                                for (int c = 0; c < cols; c++)
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(2.0),
+                                      child: TextField(
+                                        controller: tableControllers[r][c],
+                                        decoration: InputDecoration(
+                                          hintText: 'س$r,ع$c',
+                                          border: const OutlineInputBorder(),
+                                          isDense: true,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
                         ],
                       ],
                     ),
@@ -717,18 +738,5 @@ class _MainEditorScreenState extends State<MainEditorScreen>
         );
       },
     );
-  }
-
-  String _getTypeName(QuestionType type) {
-    switch (type) {
-      case QuestionType.text:
-        return 'نصي / مقالي';
-      case QuestionType.mcq:
-        return 'اختيار من متعدد';
-      case QuestionType.trueFalse:
-        return 'صح أو خطأ';
-      case QuestionType.table:
-        return 'جدول تفاعلي';
-    }
   }
 }
