@@ -1,59 +1,86 @@
 import 'package:flutter/material.dart';
 
-enum HeaderStyle { ovalTriple, modernMinimal, republicEmblem }
+enum HeaderStyle { republicEmblem, ovalTriple, modernMinimal }
 
 class ExamHeaderData {
   String republic;
   String ministry;
   String directorate;
   String schoolName;
+  String examType;
+  String academicYear;
   String subject;
   String grade;
-  String examType;
   String section;
   String date;
   String duration;
-  String academicYear;
-  HeaderStyle style;
   bool showEmblem;
+  HeaderStyle style;
 
   ExamHeaderData({
     this.republic = 'الجمهورية اليمنية',
     this.ministry = 'وزارة التربية والتعليم',
     this.directorate = 'مكتب التربية والتعليم',
-    this.schoolName = 'مدرسة النهضة الحديثة',
-    this.subject = 'اللغة العربية',
-    this.grade = 'الأول الثانوي',
-    this.examType = 'اختبار الشهر الثاني',
+    this.schoolName = 'مدرسة الأمل النموذجية',
+    this.examType = 'اختبار الفصل الدراسي الأول',
+    this.academicYear = '2025 - 2026م',
+    this.subject = 'الرياضيات',
+    this.grade = 'التاسع الأساسي',
     this.section = 'أ',
-    this.date = '2026 / 5 / 10 م',
+    this.date = '2026/01/15',
     this.duration = 'ساعتان',
-    this.academicYear = '2025 - 2026 م',
-    this.style = HeaderStyle.republicEmblem,
     this.showEmblem = true,
+    this.style = HeaderStyle.republicEmblem,
   });
 }
 
+// أنواع الأسئلة المتاحة
+enum QuestionType { text, multipleChoice, trueFalse, table }
+
 class QuestionItem {
   String id;
-  String number;
-  String title;
-  List<String> subItems;
-  double grade;
-  double fontSize;
+  QuestionType type;
+  String title; // نص السؤال
+  double score; // الدرجة
+
+  // أدوات التنسيق
   bool isBold;
   bool isItalic;
   bool isUnderline;
 
+  // خصائص السؤال النصي
+  int answerLines; // عدد أسطر الإجابة
+
+  // خصائص سؤال اختر الإجابة الصحيحة
+  List<String> options;
+
+  // خصائص سؤال صح أو خطأ
+  List<String> statements;
+
+  // خصائص سؤال الجدول
+  int tableRows;
+  int tableCols;
+  List<List<String>> tableData;
+
   QuestionItem({
     required this.id,
-    required this.number,
-    required this.title,
-    required this.subItems,
-    this.grade = 1.0,
-    this.fontSize = 11.0,
+    this.type = QuestionType.text,
+    this.title = '',
+    this.score = 5.0,
     this.isBold = false,
     this.isItalic = false,
     this.isUnderline = false,
-  });
+    this.answerLines = 3,
+    List<String>? options,
+    List<String>? statements,
+    this.tableRows = 2,
+    this.tableCols = 2,
+    List<List<String>>? tableData,
+  })  : options = options ?? ['الخيار الأول', 'الخيار الثاني', 'الخيار الثالث'],
+        statements = statements ?? ['العبارة الأولى', 'العبارة الثانية'],
+        tableData = tableData ??
+            [
+              ['م', 'العنصر الأول', 'العنصر الثاني'],
+              ['1', 'بيان 1', 'بيان 2']
+            ];
 }
