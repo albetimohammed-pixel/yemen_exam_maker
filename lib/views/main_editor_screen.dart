@@ -286,7 +286,7 @@ class _MainEditorScreenState extends State<MainEditorScreen>
               Container(
                 margin: const EdgeInsets.symmetric(vertical: 4),
                 decoration: const BoxDecoration(
-                  border: Border(bottom: BorderSide(color: Colors.grey, style: BorderStyle.dashed)),
+                  border: Border(bottom: BorderSide(color: Colors.grey, style: BorderStyle.solid)),
                 ),
                 height: 22,
               )
@@ -369,7 +369,6 @@ class _MainEditorScreenState extends State<MainEditorScreen>
     showDialog(
       context: context,
       builder: (context) {
-        // تم تصحيح الكلاس هنا إلى StatefulBuilder
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return Directionality(
