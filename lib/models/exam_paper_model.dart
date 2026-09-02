@@ -10,6 +10,7 @@ class ExamHeaderData {
   String examType;
   String academicYear;
   String subject;
+  String day;
   String grade;
   String section;
   String date;
@@ -20,69 +21,112 @@ class ExamHeaderData {
   ExamHeaderData({
     this.republic = 'الجمهورية اليمنية',
     this.ministry = 'وزارة التربية والتعليم',
-    this.directorate = 'مكتب التربية والتعليم',
-    this.schoolName = 'مدرسة الأمل النموذجية',
-    this.examType = 'اختبار الفصل الدراسي الأول',
+    this.directorate = 'مديرية المكلا',
+    this.schoolName = 'ثانوية المكلا النموذجية للبنين',
+    this.examType = 'اختبار الشهري الثاني الفصل الدراسي الثاني',
     this.academicYear = '2025 - 2026م',
-    this.subject = 'الرياضيات',
-    this.grade = 'التاسع الأساسي',
-    this.section = 'أ',
-    this.date = '2026/01/15',
-    this.duration = 'ساعتان',
+    this.subject = 'المجتمع',
+    this.day = 'الاثنين',
+    this.grade = 'الصف الأول الثانوي',
+    this.section = '',
+    this.date = '2026/4/20م',
+    this.duration = 'حصة',
     this.showEmblem = true,
-    this.style = HeaderStyle.republicEmblem,
+    this.style = HeaderStyle.ovalTriple,
   });
 }
 
-// أنواع الأسئلة المتاحة
 enum QuestionType { text, multipleChoice, trueFalse, table }
+
+// فقرة فرعية داخل السؤال (مثل أ، ب، ج)
+class SubQuestionPart {
+  String label; // مثلاً: أ)، ب)، ج)
+  String text;  // نص الفقرة
+  double score; // درجة هذه الفقرة
+
+  SubQuestionPart({
+    required this.label,
+    required this.text,
+    required this.score,
+  });
+}
 
 class QuestionItem {
   String id;
+  String questionNumber; // رقم السؤال (مثل 1)
+  String instruction;    // التوجيه (مثل: * اجب عن جميع الأسئلة الآتية :)
   QuestionType type;
-  String title; // نص السؤال
-  double score; // الدرجة
+  String title;          // نص السؤال العام
+  double score;          // الدرجة الكلية
 
-  // أدوات التنسيق
   bool isBold;
   bool isItalic;
   bool isUnderline;
 
-  // خصائص السؤال النصي
-  int answerLines; // عدد أسطر الإجابة
-
-  // خصائص سؤال اختر الإجابة الصحيحة
+  int answerLines;
   List<String> options;
-
-  // خصائص سؤال صح أو خطأ
   List<String> statements;
-
-  // خصائص سؤال الجدول
-  int tableRows;
-  int tableCols;
   List<List<String>> tableData;
+
+  // فقرات السؤال الفرعية (التي تظهر في الجدول)
+  List<SubQuestionPart> parts;
 
   QuestionItem({
     required this.id,
+    this.questionNumber = '1',
+    this.instruction = '* اجب عن جميع الأسئلة الآتية :',
     this.type = QuestionType.text,
     this.title = '',
-    this.score = 5.0,
+    this.score = 20.0,
     this.isBold = false,
     this.isItalic = false,
     this.isUnderline = false,
     this.answerLines = 3,
     List<String>? options,
     List<String>? statements,
-    int? tableRows,
-    int? tableCols,
     List<List<String>>? tableData,
-  })  : options = options ?? ['الخيار الأول', 'الخيار الثاني', 'الخيار الثالث'],
+    List<SubQuestionPart>? parts,
+  })  : options = options ?? ['الخيار الأول', 'الخيار الثاني'],
         statements = statements ?? ['العبارة الأولى', 'العبارة الثانية'],
         tableData = tableData ??
             [
-              ['م', 'العنصر الأول', 'العنصر الثاني'],
+              ['م', 'العنصر', 'البيان'],
               ['1', 'بيان 1', 'بيان 2']
             ],
-        tableRows = tableRows ?? (tableData != null ? tableData.length : 2),
-        tableCols = tableCols ?? (tableData != null && tableData.isNotEmpty ? tableData[0].length : 3);
+        parts = parts ?? [];
+}
+
+// نموذج الاختبار المحفوظ
+class SavedExamModel {
+  String id;
+  String title;
+  DateTime dateSaved;
+  ExamHeaderData headerData;
+  List<QuestionItem> questions;
+
+  SavedExamModel({
+    required this.id,
+    required this.title,
+    required this.dateSaved,
+    required this.headerData,
+    required this.questions,
+  });
+}
+
+// مدير تخزين الاختبارات المحفوظة
+class ExamStorage {
+  static final List<SavedExamModel> savedExams = [];
+
+  static void saveExam(SavedExamModel exam) {
+    int existingIndex = savedExams.indexWhere((e) => e.id == exam.id);
+    if (existingIndex >= 0) {
+      savedExams[existingIndex] = exam;
+    } else {
+      savedExams.insert(0, exam);
+    }
+  }
+
+  static void deleteExam(String id) {
+    savedExams.removeWhere((e) => e.id == id);
+  }
 }
