@@ -22,3 +22,8 @@ flutter:
 
   assets:
     - assets/images/developer.jpg
+dependencies:
+  flutter:
+    sdk: flutter
+  pdf: ^3.10.4
+  printing: ^5.11.1
