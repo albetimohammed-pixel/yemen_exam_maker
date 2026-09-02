@@ -1,8 +1,6 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import '../models/exam_paper_model.dart';
 import '../widgets/yemeni_exam_header.dart';
-import '../widgets/exam_paper_table.dart';
 import 'about_screen.dart';
 
 class MainEditorScreen extends StatefulWidget {
@@ -12,37 +10,34 @@ class MainEditorScreen extends StatefulWidget {
   State<MainEditorScreen> createState() => _MainEditorScreenState();
 }
 
-class _MainEditorScreenState extends State<MainEditorScreen> {
+class _MainEditorScreenState extends State<MainEditorScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   final ExamHeaderData _headerData = ExamHeaderData();
   final List<QuestionItem> _questions = [];
 
-  final List<String> _gradesList = [
-    'روضة / تمهيدي',
-    'الأول الابتدائي', 'الثاني الابتدائي', 'الثالث الابتدائي', 'الرابع الابتدائي', 'الخامس الابتدائي', 'السادس الابتدائي',
-    'الأول المتوسط/الإعدادي', 'الثاني المتوسط/الإعدادي', 'الثالث المتوسط/الإعدادي',
-    'الأول الثانوي', 'الثاني الثانوي', 'الثالث الثانوي (علمي)', 'الثالث الثانوي (أدبي)'
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
 
-  final List<String> _examTypesList = [
-    'اختبار الشهر الأول',
-    'اختبار الشهر الثاني',
-    'اختبار منتصف الفصل الدراسي الأول',
-    'اختبار نهاية الفصل الدراسي الأول',
-    'اختبار منتصف الفصل الدراسي الثاني',
-    'اختبار نهاية الفصل الدراسي الثاني (النهائي)',
-    'اختبار تجريبي'
-  ];
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 3,
+    return Directionality(
+      textDirection: TextDirection.rtl,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('محرر الاختبارات الاحترافي'),
+          title: const Text('محرر الاختبارات المدرسية'),
+          centerTitle: true,
           actions: [
             IconButton(
-              icon: const Icon(Icons.person_pin),
+              icon: const Icon(Icons.info_outline),
               tooltip: 'عن المطور',
               onPressed: () {
                 Navigator.push(
@@ -51,175 +46,162 @@ class _MainEditorScreenState extends State<MainEditorScreen> {
                 );
               },
             ),
-            IconButton(
-              icon: const Icon(Icons.print),
-              tooltip: 'طباعة الاختبار',
-              onPressed: _printExam,
-            ),
-            IconButton(
-              icon: const Icon(Icons.picture_as_pdf),
-              tooltip: 'تصدير PDF / صورة',
-              onPressed: _exportExam,
-            ),
-            IconButton(
-              icon: const Icon(Icons.save),
-              tooltip: 'حفظ الاختبار',
-              onPressed: _saveExam,
-            ),
           ],
-          bottom: const TabBar(
-            tabs: [
-              Tab(icon: Icon(Icons.edit_note), text: 'بيانات الكليشة'),
-              Tab(icon: Icon(Icons.format_list_numbered), text: 'الأسئلة'),
-              Tab(icon: Icon(Icons.remove_red_eye), text: 'معاينة الورقة'),
+          bottom: TabBar(
+            controller: _tabController,
+            tabs: const [
+              Tab(icon: Icon(Icons.article), text: 'الكليشة'),
+              Tab(icon: Icon(Icons.format_list_bulleted), text: 'الأسئلة'),
+              Tab(icon: Icon(Icons.print), text: 'المعاينة والطباعة'),
             ],
           ),
         ),
         body: TabBarView(
+          controller: _tabController,
           children: [
             _buildHeaderEditorTab(),
             _buildQuestionsEditorTab(),
-            _buildPaperPreviewTab(),
+            _buildExamPreviewTab(),
           ],
         ),
       ),
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // 1. تبويب تعديل الكليشة
+  // ---------------------------------------------------------------------------
   Widget _buildHeaderEditorTab() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(12.0),
+      padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('تصميم وستايل الكليشة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const Text('نمط الكليشة:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(height: 8),
-          SegmentedButton<HeaderStyle>(
-            segments: const [
-              ButtonSegment(value: HeaderStyle.republicEmblem, label: Text('الشعار الرسمي')),
-              ButtonSegment(value: HeaderStyle.ovalTriple, label: Text('بيضاوي ثلاثي')),
-              ButtonSegment(value: HeaderStyle.modernMinimal, label: Text('حديث بسيط')),
+          DropdownButtonFormField<HeaderStyle>(
+            value: _headerData.style,
+            decoration: const InputDecoration(border: OutlineInputBorder()),
+            items: const [
+              DropdownMenuItem(value: HeaderStyle.republicEmblem, child: Text('الرسمي (شعار الجمهورية)')),
+              DropdownMenuItem(value: HeaderStyle.ovalTriple, child: Text('البيضاوي الثلاثي')),
+              DropdownMenuItem(value: HeaderStyle.modernMinimal, child: Text('الحديث البسيط')),
             ],
-            selected: {_headerData.style},
-            onSelectionChanged: (Set<HeaderStyle> newSelection) {
-              setState(() {
-                _headerData.style = newSelection.first;
-              });
+            onChanged: (val) {
+              if (val != null) setState(() => _headerData.style = val);
             },
           ),
-          const Divider(height: 24),
-
-          DropdownButtonFormField<String>(
-            value: _gradesList.contains(_headerData.grade) ? _headerData.grade : _gradesList[10],
-            decoration: const InputDecoration(labelText: 'الصف الدراسي', border: OutlineInputBorder()),
-            items: _gradesList.map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
-            onChanged: (val) => setState(() => _headerData.grade = val ?? ''),
+          const SizedBox(height: 16),
+          TextFormField(
+            initialValue: _headerData.schoolName,
+            decoration: const InputDecoration(labelText: 'اسم المدرسة', border: OutlineInputBorder()),
+            onChanged: (val) => _headerData.schoolName = val,
           ),
           const SizedBox(height: 12),
-
-          DropdownButtonFormField<String>(
-            value: _examTypesList.contains(_headerData.examType) ? _headerData.examType : _examTypesList[1],
-            decoration: const InputDecoration(labelText: 'نوع الاختبار', border: OutlineInputBorder()),
-            items: _examTypesList.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
-            onChanged: (val) => setState(() => _headerData.examType = val ?? ''),
-          ),
-          const SizedBox(height: 12),
-
           Row(
             children: [
               Expanded(
-                child: TextField(
-                  controller: TextEditingController(text: _headerData.schoolName),
-                  decoration: const InputDecoration(labelText: 'اسم المدرسة', border: OutlineInputBorder()),
-                  onChanged: (v) => _headerData.schoolName = v,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  controller: TextEditingController(text: _headerData.subject),
+                child: TextFormField(
+                  initialValue: _headerData.subject,
                   decoration: const InputDecoration(labelText: 'المادة', border: OutlineInputBorder()),
-                  onChanged: (v) => _headerData.subject = v,
+                  onChanged: (val) => _headerData.subject = val,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextFormField(
+                  initialValue: _headerData.grade,
+                  decoration: const InputDecoration(labelText: 'الصف', border: OutlineInputBorder()),
+                  onChanged: (val) => _headerData.grade = val,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-
           Row(
             children: [
               Expanded(
-                child: TextField(
-                  controller: TextEditingController(text: _headerData.section),
-                  decoration: const InputDecoration(labelText: 'الفصل/الشعبة (أ، ب...)', border: OutlineInputBorder()),
-                  onChanged: (v) => _headerData.section = v,
+                child: TextFormField(
+                  initialValue: _headerData.examType,
+                  decoration: const InputDecoration(labelText: 'نوع الاختبار', border: OutlineInputBorder()),
+                  onChanged: (val) => _headerData.examType = val,
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: TextField(
-                  controller: TextEditingController(text: _headerData.duration),
+                child: TextFormField(
+                  initialValue: _headerData.duration,
                   decoration: const InputDecoration(labelText: 'زمن الاختبار', border: OutlineInputBorder()),
-                  onChanged: (v) => _headerData.duration = v,
+                  onChanged: (val) => _headerData.duration = val,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: TextEditingController(text: _headerData.date),
-                  decoration: const InputDecoration(labelText: 'التاريخ', border: OutlineInputBorder()),
-                  onChanged: (v) => _headerData.date = v,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  controller: TextEditingController(text: _headerData.academicYear),
-                  decoration: const InputDecoration(labelText: 'العام الدراسي', border: OutlineInputBorder()),
-                  onChanged: (v) => _headerData.academicYear = v,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          TextField(
-            controller: TextEditingController(text: _headerData.directorate),
-            decoration: const InputDecoration(labelText: 'المديرية / مكتب التربية', border: OutlineInputBorder()),
-            onChanged: (v) => _headerData.directorate = v,
+          TextFormField(
+            initialValue: _headerData.academicYear,
+            decoration: const InputDecoration(labelText: 'العام الدراسي', border: OutlineInputBorder()),
+            onChanged: (val) => _headerData.academicYear = val,
           ),
         ],
       ),
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // 2. تبويب إدارة الأسئلة
+  // ---------------------------------------------------------------------------
   Widget _buildQuestionsEditorTab() {
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _addQuestionDialog,
+        onPressed: () => _openQuestionDialog(),
         icon: const Icon(Icons.add),
         label: const Text('إضافة سؤال جديد'),
       ),
       body: _questions.isEmpty
-          ? const Center(child: Text('لا توجد أسئلة بعد. اضغط على الزر بالأسفل للإضافة.'))
+          ? const Center(
+              child: Text(
+                'لا توجد أسئلة مضافة بعد.\nاضغط على "إضافة سؤال جديد" للبدء.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16, color: Colors.grey),
+              ),
+            )
           : ListView.builder(
+              padding: const EdgeInsets.all(12),
               itemCount: _questions.length,
               itemBuilder: (context, index) {
                 final q = _questions[index];
                 return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  elevation: 2,
                   child: ListTile(
-                    leading: CircleAvatar(child: Text(q.number)),
-                    title: Text(q.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-                    subtitle: Text('الدرجة: ${q.grade} | الفقرات الفرعية: ${q.subItems.length}'),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => setState(() => _questions.removeAt(index)),
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.blue.shade100,
+                      child: Text('${index + 1}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+                    ),
+                    title: Text(
+                      q.title.isEmpty ? 'سؤال بدون عنوان' : q.title,
+                      style: TextStyle(
+                        fontWeight: q.isBold ? FontWeight.bold : FontWeight.normal,
+                        fontStyle: q.isItalic ? FontStyle.italic : FontStyle.normal,
+                        decoration: q.isUnderline ? TextDecoration.underline : TextDecoration.none,
+                      ),
+                    ),
+                    subtitle: Text('نوع السؤال: ${_getQuestionTypeName(q.type)} | الدرجة: ${q.score}'),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.amber),
+                          onPressed: () => _openQuestionDialog(existingQuestion: q, index: index),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () {
+                            setState(() => _questions.removeAt(index));
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 );
@@ -228,126 +210,431 @@ class _MainEditorScreenState extends State<MainEditorScreen> {
     );
   }
 
-  Widget _buildPaperPreviewTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(12),
-      child: Center(
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(10),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, spreadRadius: 2)],
-          ),
-          child: Column(
-            children: [
-              YemeniExamHeader(headerData: _headerData),
-              const SizedBox(height: 6),
-              ExamPaperTable(questions: _questions),
-            ],
-          ),
-        ),
-      ),
-    );
+  String _getQuestionTypeName(QuestionType type) {
+    switch (type) {
+      case QuestionType.text:
+        return 'سؤال نصي';
+      case QuestionType.multipleChoice:
+        return 'اختر الإجابة الصحيحة';
+      case QuestionType.trueFalse:
+        return 'صح أو خطأ';
+      case QuestionType.table:
+        return 'جدول';
+    }
   }
 
-  void _addQuestionDialog() {
-    String qNum = 'س ${min(_questions.length + 1, 99)}';
-    String qTitle = '';
-    double qGrade = 2.0;
-    final List<String> subs = [];
-    final subController = TextEditingController();
+  // ---------------------------------------------------------------------------
+  // نافذة إضافة وتعديل السؤال الذكية
+  // ---------------------------------------------------------------------------
+  void _openQuestionDialog({QuestionItem? existingQuestion, int? index}) {
+    final isEditing = existingQuestion != null;
+    final QuestionItem item = existingQuestion ??
+        QuestionItem(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+        );
+
+    final titleController = TextEditingController(text: item.title);
+    final scoreController = TextEditingController(text: item.score.toString());
 
     showDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setDlgState) => AlertDialog(
-          title: const Text('إضافة سؤال جديد'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  decoration: const InputDecoration(labelText: 'رقم/رمز السؤال (مثال: س1)'),
-                  onChanged: (v) => qNum = v,
-                ),
-                TextField(
-                  decoration: const InputDecoration(labelText: 'نص السؤال الرئيسي'),
-                  onChanged: (v) => qTitle = v,
-                ),
-                TextField(
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'درجة السؤال'),
-                  onChanged: (v) => qGrade = double.tryParse(v) ?? 2.0,
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: subController,
-                        decoration: const InputDecoration(labelText: 'إضافة فقرة فرعية (أ، ب، 1...)'),
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text(isEditing ? 'تعديل السؤال' : 'إضافة سؤال جديد'),
+              content: SizedBox(
+                width: MediaQuery.of(context).size.width * 0.9,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // اختيار نوع السؤال
+                      const Text('نوع السؤال:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 6),
+                      DropdownButtonFormField<QuestionType>(
+                        value: item.type,
+                        decoration: const InputDecoration(border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
+                        items: const [
+                          DropdownMenuItem(value: QuestionType.text, child: Text('سؤال نصي')),
+                          DropdownMenuItem(value: QuestionType.multipleChoice, child: Text('اختر الإجابة الصحيحة')),
+                          DropdownMenuItem(value: QuestionType.trueFalse, child: Text('صح أو خطأ')),
+                          DropdownMenuItem(value: QuestionType.table, child: Text('جدول')),
+                        ],
+                        onChanged: (val) {
+                          if (val != null) {
+                            setDialogState(() => item.type = val);
+                          }
+                        },
                       ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.add_circle, color: Colors.green),
-                      onPressed: () {
-                        if (subController.text.isNotEmpty) {
-                          setDlgState(() {
-                            subs.add(subController.text);
-                            subController.clear();
-                          });
-                        }
-                      },
-                    ),
-                  ],
+                      const SizedBox(height: 12),
+
+                      // نص السؤال الرئيسي
+                      TextField(
+                        controller: titleController,
+                        decoration: const InputDecoration(
+                          labelText: 'نص السؤال / راس السؤال',
+                          border: OutlineInputBorder(),
+                        ),
+                        onChanged: (val) => item.title = val,
+                      ),
+                      const SizedBox(height: 10),
+
+                      // أدوات التنسيق والدرجة
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: scoreController,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                labelText: 'الدرجة',
+                                border: OutlineInputBorder(),
+                              ),
+                              onChanged: (val) => item.score = double.tryParse(val) ?? 0.0,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // شريط أدوات التنسيق
+                          Container(
+                            decoration: BoxDecoration(border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(4)),
+                            child: Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.format_bold),
+                                  color: item.isBold ? Colors.blue : Colors.black,
+                                  onPressed: () => setDialogState(() => item.isBold = !item.isBold),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.format_italic),
+                                  color: item.isItalic ? Colors.blue : Colors.black,
+                                  onPressed: () => setDialogState(() => item.isItalic = !item.isItalic),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.format_underlined),
+                                  color: item.isUnderline ? Colors.blue : Colors.black,
+                                  onPressed: () => setDialogState(() => item.isUnderline = !item.isUnderline),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 24),
+
+                      // الخصائص التفاعلية بناءً على نوع السؤال المختار
+                      if (item.type == QuestionType.text) ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('عدد أسطر الإجابة:', style: TextStyle(fontWeight: FontWeight.bold)),
+                            DropdownButton<int>(
+                              value: item.answerLines,
+                              items: List.generate(10, (i) => i + 1)
+                                  .map((n) => DropdownMenuItem(value: n, child: Text('$n أسطر')))
+                                  .toList(),
+                              onChanged: (val) {
+                                if (val != null) setDialogState(() => item.answerLines = val);
+                              },
+                            ),
+                          ],
+                        ),
+                      ] else if (item.type == QuestionType.multipleChoice) ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('خيارات الإجابة:', style: TextStyle(fontWeight: FontWeight.bold)),
+                            TextButton.icon(
+                              icon: const Icon(Icons.add, size: 18),
+                              label: const Text('إضافة خيار'),
+                              onPressed: () {
+                                setDialogState(() {
+                                  item.options.add('خيار ${item.options.length + 1}');
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                        ...item.options.asMap().entries.map((entry) {
+                          final idx = entry.key;
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 6.0),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: TextFormField(
+                                    initialValue: entry.value,
+                                    decoration: InputDecoration(
+                                      labelText: 'خيار ${idx + 1}',
+                                      border: const OutlineInputBorder(),
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    ),
+                                    onChanged: (val) => item.options[idx] = val,
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                  onPressed: () {
+                                    setDialogState(() => item.options.removeAt(idx));
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                      ] else if (item.type == QuestionType.trueFalse) ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('فقرات الصح والخطأ:', style: TextStyle(fontWeight: FontWeight.bold)),
+                            TextButton.icon(
+                              icon: const Icon(Icons.add, size: 18),
+                              label: const Text('إضافة فقرة'),
+                              onPressed: () {
+                                setDialogState(() {
+                                  item.statements.add('فقرة ${item.statements.length + 1}');
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                        ...item.statements.asMap().entries.map((entry) {
+                          final idx = entry.key;
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 6.0),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: TextFormField(
+                                    initialValue: entry.value,
+                                    decoration: InputDecoration(
+                                      labelText: 'العبارة ${idx + 1}',
+                                      border: const OutlineInputBorder(),
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    ),
+                                    onChanged: (val) => item.statements[idx] = val,
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                  onPressed: () {
+                                    setDialogState(() => item.statements.removeAt(idx));
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                      ] else if (item.type == QuestionType.table) ...[
+                        const Text('إعدادات الجدول:', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        Text('عدد الصفوف: ${item.tableRows} | عدد الأعمدة: ${item.tableCols}'),
+                        const SizedBox(height: 8),
+                        const Text('محتويات الجدول (ملاحظة: يمكنك تعديل القيم من الخانات):', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        const SizedBox(height: 8),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Table(
+                            defaultColumnWidth: const FixedColumnWidth(80.0),
+                            border: TableBorder.all(color: Colors.black),
+                            children: List.generate(item.tableRows, (r) {
+                              return TableRow(
+                                children: List.generate(item.tableCols, (c) {
+                                  return Padding(
+                                    padding: const EdgeInsets.all(2.0),
+                                    child: TextFormField(
+                                      initialValue: (r < item.tableData.length && c < item.tableData[r].length) ? item.tableData[r][c] : '',
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(fontSize: 12),
+                                      onChanged: (val) {
+                                        while (item.tableData.length <= r) {
+                                          item.tableData.add(List.filled(item.tableCols, ''));
+                                        }
+                                        while (item.tableData[r].length <= c) {
+                                          item.tableData[r].add('');
+                                        }
+                                        item.tableData[r][c] = val;
+                                      },
+                                    ),
+                                  );
+                                }),
+                              );
+                            }),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-                Wrap(
-                  children: subs.map((s) => Chip(label: Text(s), onDeleted: () => setDlgState(() => subs.remove(s)))).toList(),
-                )
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('إلغاء'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      if (isEditing && index != null) {
+                        _questions[index] = item;
+                      } else {
+                        _questions.add(item);
+                      }
+                    });
+                    Navigator.pop(context);
+                  },
+                  child: const Text('حفظ السؤال'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 3. تبويب المعاينة المباشرة والطباعة
+  // ---------------------------------------------------------------------------
+  Widget _buildExamPreviewTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(12.0),
+      child: Column(
+        children: [
+          // ورقة الاختبار المطبوعة
+          Container(
+            padding: const EdgeInsets.all(12.0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: Colors.black, width: 1.5),
+              boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // الكليشة الرسمية
+                YemeniExamHeader(headerData: _headerData),
+                const SizedBox(height: 12),
+
+                // عرض الأسئلة المضافة
+                if (_questions.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 40.0),
+                    child: Center(
+                      child: Text('ورقة الاختبار فارغة حالياً.\nقم بإضافة أسئلة من تبويب "الأسئلة".', textAlign: TextAlign.center),
+                    ),
+                  )
+                else
+                  ..._questions.asMap().entries.map((entry) {
+                    final idx = entry.key;
+                    final q = entry.value;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: _buildQuestionPreviewItem(idx + 1, q),
+                    );
+                  }),
               ],
             ),
           ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
-            ElevatedButton(
-              onPressed: () {
-                if (qTitle.isNotEmpty) {
-                  setState(() {
-                    _questions.add(QuestionItem(
-                      id: DateTime.now().toString(),
-                      number: qNum,
-                      title: qTitle,
-                      subItems: subs,
-                      grade: qGrade,
-                    ));
-                  });
-                  Navigator.pop(ctx);
-                }
-              },
-              child: const Text('إضافة'),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
 
-  void _printExam() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('جاري تجهيز الأمر وإرسال الورقة للطابعة... 🟨')),
+  Widget _buildQuestionPreviewItem(int number, QuestionItem q) {
+    final titleTextStyle = TextStyle(
+      fontSize: 13,
+      fontWeight: q.isBold ? FontWeight.bold : FontWeight.normal,
+      fontStyle: q.isItalic ? FontStyle.italic : FontStyle.normal,
+      decoration: q.isUnderline ? TextDecoration.underline : TextDecoration.none,
+      color: Colors.black,
     );
-  }
 
-  void _exportExam() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('تم تصدير ورقة الاختبار بنجاح بصيغة PDF وجاهزة للمشاركة! 📄✨')),
-    );
-  }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // عنوان السؤال والدرجة
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text('س $number: ${q.title}', style: titleTextStyle),
+            ),
+            Text('(${q.score} درجات)', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black)),
+          ],
+        ),
+        const SizedBox(height: 6),
 
-  void _saveExam() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('تم حفظ نموذج الاختبار في ذاكرة التطبيق بنجاح ✅')),
+        // طريقة العرض بناءً على النوع
+        if (q.type == QuestionType.text) ...[
+          // أسطر إجابة فارغة
+          Column(
+            children: List.generate(
+              q.answerLines,
+              (index) => Container(
+                margin: const EdgeInsets.only(top: 14),
+                decoration: const BoxDecoration(
+                  border: Border(bottom: BorderSide(color: Colors.grey, style: BorderStyle.solid)),
+                ),
+              ),
+            ),
+          ),
+        ] else if (q.type == QuestionType.multipleChoice) ...[
+          // خيارات الإجابة
+          Padding(
+            padding: const EdgeInsets.only(right: 12.0, top: 4.0),
+            child: Wrap(
+              spacing: 20,
+              runSpacing: 8,
+              children: q.options.asMap().entries.map((opt) {
+                final letters = ['أ', 'ب', 'ج', 'د', 'هـ', 'و'];
+                final letter = opt.key < letters.length ? letters[opt.key] : '${opt.key + 1}';
+                return Text('$letter) ${opt.value}', style: const TextStyle(fontSize: 12, color: Colors.black));
+              }).toList(),
+            ),
+          ),
+        ] else if (q.type == QuestionType.trueFalse) ...[
+          // فقرات صح أو خطأ
+          Column(
+            children: q.statements.asMap().entries.map((st) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 12.0, top: 4.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('${st.key + 1}- ${st.value}', style: const TextStyle(fontSize: 12, color: Colors.black)),
+                    const Text('(   )', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black)),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ] else if (q.type == QuestionType.table) ...[
+          // جدول الاختبار
+          Padding(
+            padding: const EdgeInsets.only(top: 6.0),
+            child: Table(
+              border: TableBorder.all(color: Colors.black, width: 1),
+              children: q.tableData.map((row) {
+                return TableRow(
+                  children: row.map((cell) {
+                    return Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: Text(
+                        cell,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 11, color: Colors.black),
+                      ),
+                    );
+                  }).toList(),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
