@@ -43,7 +43,16 @@ class Question {
 // 2. الشاشة الرئيسية (MainEditorScreen)
 // ==========================================
 class MainEditorScreen extends StatefulWidget {
-  const MainEditorScreen({Key? key}) : super(key: key);
+  final dynamic exam;
+  final dynamic title;
+  final dynamic data;
+
+  const MainEditorScreen({
+    Key? key,
+    this.exam,
+    this.title,
+    this.data,
+  }) : super(key: key);
 
   @override
   State<MainEditorScreen> createState() => _MainEditorScreenState();
