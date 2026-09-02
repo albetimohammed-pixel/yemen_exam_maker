@@ -43,12 +43,14 @@ class Question {
 // 2. الشاشة الرئيسية (MainEditorScreen)
 // ==========================================
 class MainEditorScreen extends StatefulWidget {
+  final dynamic initialExam;
   final dynamic exam;
   final dynamic title;
   final dynamic data;
 
   const MainEditorScreen({
     Key? key,
+    this.initialExam,
     this.exam,
     this.title,
     this.data,
