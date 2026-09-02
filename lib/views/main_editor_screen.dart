@@ -428,33 +428,127 @@ class _MainEditorScreenState extends State<MainEditorScreen> with SingleTickerPr
                           );
                         }),
                       ] else if (item.type == QuestionType.table) ...[
-                        const Text('إعدادات الجدول:', style: TextStyle(fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 8),
-                        Text('عدد الصفوف: ${item.tableRows} | عدد الأعمدة: ${item.tableCols}'),
-                        const SizedBox(height: 8),
-                        const Text('محتويات الجدول (ملاحظة: يمكنك تعديل القيم من الخانات):', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                        const SizedBox(height: 8),
+                        const Text('تنسيق وإعدادات الجدول:', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 10),
+
+                        // أدوات التحكم بالصفوف
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'عدد الصفوف: ${item.tableData.length}',
+                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                            ),
+                            Row(
+                              children: [
+                                OutlinedButton.icon(
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                  icon: const Icon(Icons.add, size: 16),
+                                  label: const Text('إضافة صف', style: TextStyle(fontSize: 12)),
+                                  onPressed: () {
+                                    setDialogState(() {
+                                      final colsCount = item.tableData.isNotEmpty ? item.tableData[0].length : 2;
+                                      item.tableData.add(List.filled(colsCount, ''));
+                                      item.tableRows = item.tableData.length;
+                                    });
+                                  },
+                                ),
+                                const SizedBox(width: 4),
+                                IconButton(
+                                  icon: const Icon(Icons.remove_circle_outline, color: Colors.red, size: 20),
+                                  tooltip: 'حذف صف',
+                                  onPressed: item.tableData.length > 1
+                                      ? () {
+                                          setDialogState(() {
+                                            item.tableData.removeLast();
+                                            item.tableRows = item.tableData.length;
+                                          });
+                                        }
+                                      : null,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+
+                        // أدوات التحكم بالأعمدة
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'عدد الأعمدة: ${item.tableData.isNotEmpty ? item.tableData[0].length : 0}',
+                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                            ),
+                            Row(
+                              children: [
+                                OutlinedButton.icon(
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                  icon: const Icon(Icons.add, size: 16),
+                                  label: const Text('إضافة عمود', style: TextStyle(fontSize: 12)),
+                                  onPressed: () {
+                                    setDialogState(() {
+                                      for (var row in item.tableData) {
+                                        row.add('');
+                                      }
+                                      if (item.tableData.isEmpty) {
+                                        item.tableData.add(['']);
+                                      }
+                                      item.tableCols = item.tableData[0].length;
+                                    });
+                                  },
+                                ),
+                                const SizedBox(width: 4),
+                                IconButton(
+                                  icon: const Icon(Icons.remove_circle_outline, color: Colors.red, size: 20),
+                                  tooltip: 'حذف عمود',
+                                  onPressed: (item.tableData.isNotEmpty && item.tableData[0].length > 1)
+                                      ? () {
+                                          setDialogState(() {
+                                            for (var row in item.tableData) {
+                                              if (row.isNotEmpty) row.removeLast();
+                                            }
+                                            item.tableCols = item.tableData[0].length;
+                                          });
+                                        }
+                                      : null,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        const Text('محتويات الخلايا:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+                        const SizedBox(height: 6),
+
+                        // الجدول التفاعلي لإدخال القيم
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: Table(
-                            defaultColumnWidth: const FixedColumnWidth(80.0),
-                            border: TableBorder.all(color: Colors.black),
-                            children: List.generate(item.tableRows, (r) {
+                            defaultColumnWidth: const FixedColumnWidth(85.0),
+                            border: TableBorder.all(color: Colors.black54),
+                            children: List.generate(item.tableData.length, (r) {
                               return TableRow(
-                                children: List.generate(item.tableCols, (c) {
+                                children: List.generate(item.tableData[r].length, (c) {
                                   return Padding(
                                     padding: const EdgeInsets.all(2.0),
                                     child: TextFormField(
-                                      initialValue: (r < item.tableData.length && c < item.tableData[r].length) ? item.tableData[r][c] : '',
+                                      key: ValueKey('cell_${r}_${c}_${item.tableData[r][c]}'),
+                                      initialValue: item.tableData[r][c],
                                       textAlign: TextAlign.center,
                                       style: const TextStyle(fontSize: 12),
+                                      decoration: const InputDecoration(
+                                        contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                                        border: InputBorder.none,
+                                        hintText: '...',
+                                      ),
                                       onChanged: (val) {
-                                        while (item.tableData.length <= r) {
-                                          item.tableData.add(List.filled(item.tableCols, ''));
-                                        }
-                                        while (item.tableData[r].length <= c) {
-                                          item.tableData[r].add('');
-                                        }
                                         item.tableData[r][c] = val;
                                       },
                                     ),
