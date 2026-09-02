@@ -106,7 +106,6 @@ class _MainEditorScreenState extends State<MainEditorScreen>
         floatingActionButton: AnimatedBuilder(
           animation: _tabController,
           builder: (context, child) {
-            // إظهار زر الإضافة فقط في تبويب الأسئلة
             if (_tabController.index == 1) {
               return FloatingActionButton.extended(
                 onPressed: () => _openQuestionDialog(),
@@ -223,7 +222,6 @@ class _MainEditorScreenState extends State<MainEditorScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // هيدر ورقة الاختبار
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -251,7 +249,6 @@ class _MainEditorScreenState extends State<MainEditorScreen>
             ),
             const Divider(thickness: 2, height: 30),
 
-            // عرض قائمة الأسئلة المعاينة
             if (_questions.isEmpty)
               const Padding(
                 padding: EdgeInsets.all(20.0),
@@ -267,7 +264,6 @@ class _MainEditorScreenState extends State<MainEditorScreen>
     );
   }
 
-  // بناء التنسيق المرئي لكل نوع سؤال داخل الورقة
   Widget _buildQuestionPreviewItem(int number, Question q) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20.0),
@@ -285,7 +281,6 @@ class _MainEditorScreenState extends State<MainEditorScreen>
           ),
           const SizedBox(height: 8),
 
-          // 1. إظهار أسطر الإجابة للسؤال المقالي
           if (q.type == QuestionType.text) ...[
             for (int i = 0; i < q.answerLines; i++)
               Container(
@@ -296,7 +291,6 @@ class _MainEditorScreenState extends State<MainEditorScreen>
                 height: 22,
               )
           ]
-          // 2. إظهار خيارات الاختيار من متعدد
           else if (q.type == QuestionType.mcq) ...[
             Wrap(
               spacing: 20,
@@ -304,7 +298,6 @@ class _MainEditorScreenState extends State<MainEditorScreen>
               children: q.options.map((opt) => Text('⚪ $opt')).toList(),
             )
           ]
-          // 3. إظهار فقرات صح أو خطأ
           else if (q.type == QuestionType.trueFalse) ...[
             Column(
               children: q.statements.map((stmt) {
@@ -320,7 +313,6 @@ class _MainEditorScreenState extends State<MainEditorScreen>
               }).toList(),
             )
           ]
-          // 4. إظهار الجدول
           else if (q.type == QuestionType.table) ...[
             Table(
               border: TableBorder.all(color: Colors.black54),
@@ -377,7 +369,8 @@ class _MainEditorScreenState extends State<MainEditorScreen>
     showDialog(
       context: context,
       builder: (context) {
-        return StatefulWidget(
+        // تم تصحيح الكلاس هنا إلى StatefulBuilder
+        return StatefulBuilder(
           builder: (context, setDialogState) {
             return Directionality(
               textDirection: TextDirection.rtl,
@@ -417,7 +410,6 @@ class _MainEditorScreenState extends State<MainEditorScreen>
                         const SizedBox(height: 16),
                         const Divider(),
 
-                        // Dynamic inputs according to Selected Question Type
                         if (selectedType == QuestionType.text) ...[
                           Row(
                             children: [
