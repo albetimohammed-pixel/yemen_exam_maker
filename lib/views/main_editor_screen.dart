@@ -89,6 +89,17 @@ class _MainEditorScreenState extends State<MainEditorScreen>
     super.dispose();
   }
 
+  // دالة تصدير وطباعة الاختبار (PDF / Print)
+  void _exportOrPrintExam() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('جاري تجهيز الاختبار للطباعة والتصدير كـ PDF...'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+    // هنا يتم ربط مكتبة الطباعة أو حفظ الـ PDF مستقبلاً بكل سهولة
+  }
+
   @override
   Widget build(BuildContext context) {
     return Directionality(
@@ -97,6 +108,14 @@ class _MainEditorScreenState extends State<MainEditorScreen>
         appBar: AppBar(
           title: const Text('محرر الاختبارات'),
           centerTitle: true,
+          actions: [
+            // زر الطباعة والتصدير الدائم في أعلى الشاشة
+            IconButton(
+              icon: const Icon(Icons.print, color: Colors.white),
+              tooltip: 'طباعة / تصدير PDF',
+              onPressed: _exportOrPrintExam,
+            ),
+          ],
           bottom: TabBar(
             controller: _tabController,
             tabs: const [
@@ -223,54 +242,70 @@ class _MainEditorScreenState extends State<MainEditorScreen>
   Widget _buildPreviewTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: Colors.grey.shade400),
-          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 5)],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        children: [
+          // زر بارز إضافي في تبويب المعاينة للتصدير الواضح
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size.fromHeight(45),
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+            ),
+            icon: const Icon(Icons.picture_as_pdf),
+            label: const Text('تصدير الاختبار كـ PDF / طباعة نهائية', style: TextStyle(fontSize: 16)),
+            onPressed: _exportOrPrintExam,
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: Colors.grey.shade400),
+              boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 5)],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(_schoolController.text, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    Text('المادة: ${_subjectController.text}'),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(_schoolController.text, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        Text('المادة: ${_subjectController.text}'),
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        Text(_examTypeController.text, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        Text('الصف: ${_gradeController.text}'),
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: const [
+                        Text('الزمن: ساعة واحدة'),
+                        Text('الدرجة الكلية: ______'),
+                      ],
+                    ),
                   ],
                 ),
-                Column(
-                  children: [
-                    Text(_examTypeController.text, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                    Text('الصف: ${_gradeController.text}'),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: const [
-                    Text('الزمن: ساعة واحدة'),
-                    Text('الدرجة الكلية: ______'),
-                  ],
-                ),
+                const Divider(thickness: 2, height: 30),
+
+                if (_questions.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(20.0),
+                    child: Center(child: Text('ورقة الاختبار فارغة حالياً.')),
+                  )
+                else
+                  ..._questions.asMap().entries.map((entry) {
+                    return _buildQuestionPreviewItem(entry.key + 1, entry.value);
+                  }).toList(),
               ],
             ),
-            const Divider(thickness: 2, height: 30),
-
-            if (_questions.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(20.0),
-                child: Center(child: Text('ورقة الاختبار فارغة حالياً.')),
-              )
-            else
-              ..._questions.asMap().entries.map((entry) {
-                return _buildQuestionPreviewItem(entry.key + 1, entry.value);
-              }).toList(),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
