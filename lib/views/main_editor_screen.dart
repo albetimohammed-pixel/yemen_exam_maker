@@ -592,51 +592,278 @@ class _MainEditorScreenState extends State<MainEditorScreen>
               ),
             )
           else if (q.type == QuestionType.mcq)
-            Padding(
-              padding: const EdgeInsets.only(right: 12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: q.options.map((opt) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2.0),
-                  child: Text('• $opt', style: const TextStyle(color: Colors.black, fontSize: 11)),
-                )).toList(),
-              ),
-            )
-          else if (q.type == QuestionType.trueFalse)
-            Padding(
-              padding: const EdgeInsets.only(right: 12.0),
-              child: Column(
-                children: q.statements.map((stmt) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2.0),
-                    child: Row(
-                      children: [
-                        Expanded(child: Text('• $stmt', style: const TextStyle(color: Colors.black, fontSize: 11))),
-                        const Text('(   )', style: TextStyle(color: Colors.black, fontSize: 11)),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-            )
-          else if (q.type == QuestionType.table)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                child: Table(
-                  border: TableBorder.all(color: Colors.black, width: 0.6),
-                  children: q.tableData.map((row) {
-                    return TableRow(
-                      children: row.map((cell) => Padding(
-                        padding: const EdgeInsets.all(4.0),
-                        child: Text(cell, style: const TextStyle(color: Colors.black, fontSize: 10), textAlign: TextAlign.center),
-                      )).toList(),
-                    );
-                  }).toList(),
+                padding: const EdgeInsets.only(right: 12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: q.options.map((opt) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2.0),
+                    child: Text('• $opt', style: const TextStyle(color: Colors.black, fontSize: 11)),
+                  )).toList(),
                 ),
-              ),
+              )
+            else if (q.type == QuestionType.trueFalse)
+                Padding(
+                  padding: const EdgeInsets.only(right: 12.0),
+                  child: Column(
+                    children: q.statements.map((stmt) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2.0),
+                        child: Row(
+                          children: [
+                            Expanded(child: Text('• $stmt', style: const TextStyle(color: Colors.black, fontSize: 11))),
+                            const Text('(   )', style: TextStyle(color: Colors.black, fontSize: 11)),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                )
+              else if (q.type == QuestionType.table)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                    child: Table(
+                      border: TableBorder.all(color: Colors.black, width: 0.6),
+                      children: q.tableData.map((row) {
+                        return TableRow(
+                          children: row.map((cell) => Padding(
+                            padding: const EdgeInsets.all(4.0),
+                            child: Text(cell, style: const TextStyle(color: Colors.black, fontSize: 10), textAlign: TextAlign.center),
+                          )).toList(),
+                        );
+                      }).toList(),
+                    ),
+                  ),
         ],
       ),
     );
+  }
+
+  // ==========================================
+  // الدوال الجديدة المضافة لإدارة محتوى حوار الأسئلة
+  // ==========================================
+  Widget _buildDynamicQuestionInputs(QuestionType type, StateSetter setDialogState, {
+    required int lines,
+    required ValueChanged<int> onLinesChanged,
+    required List<TextEditingController> optionControllers,
+    required List<TextEditingController> tfControllers,
+    required int rows,
+    required int cols,
+    required List<List<TextEditingController>> tableControllers,
+  }) {
+    if (type == QuestionType.text) {
+      return Row(
+        children: [
+          const Text('عدد أسطر الإجابة: '),
+          const SizedBox(width: 10),
+          DropdownButton<int>(
+            value: lines,
+            items: [1, 2, 3, 4, 5, 6].map((l) => DropdownMenuItem(value: l, child: Text('$l'))).toList(),
+            onChanged: (val) {
+              if (val != null) onLinesChanged(val);
+            },
+          ),
+        ],
+      );
+    } else if (type == QuestionType.mcq) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('خيارات الاختيار من متعدد:', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          ...optionControllers.asMap().entries.map((entry) {
+            int i = entry.key;
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: entry.value,
+                      decoration: InputDecoration(labelText: 'الخيار ${i + 1}', border: const OutlineInputBorder()),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () {
+                      setDialogState(() {
+                        optionControllers.removeAt(i);
+                      });
+                    },
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+          TextButton.icon(
+            icon: const Icon(Icons.add),
+            label: const Text('إضافة خيار'),
+            onPressed: () {
+              setDialogState(() {
+                optionControllers.add(TextEditingController(text: 'خيار جديد'));
+              });
+            },
+          ),
+        ],
+      );
+    } else if (type == QuestionType.trueFalse || type == QuestionType.complete) {
+      String labelText = type == QuestionType.trueFalse ? 'عبارات الصح والخطأ' : 'فقرات أكمل الفراغات';
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(labelText, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          ...tfControllers.asMap().entries.map((entry) {
+            int i = entry.key;
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: entry.value,
+                      decoration: InputDecoration(labelText: 'الفقرة ${i + 1}', border: const OutlineInputBorder()),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () {
+                      setDialogState(() {
+                        tfControllers.removeAt(i);
+                      });
+                    },
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+          TextButton.icon(
+            icon: const Icon(Icons.add),
+            label: const Text('إضافة فقرة جديدة'),
+            onPressed: () {
+              setDialogState(() {
+                tfControllers.add(TextEditingController(text: 'فقرة جديدة'));
+              });
+            },
+          ),
+        ],
+      );
+    } else if (type == QuestionType.table) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('بيانات الجدول:', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  decoration: const InputDecoration(labelText: 'عدد الأسطر', border: OutlineInputBorder()),
+                  keyboardType: TextInputType.number,
+                  controller: TextEditingController(text: rows.toString()),
+                  onSubmitted: (val) {
+                    int? newRows = int.tryParse(val);
+                    if (newRows != null && newRows > 0) {
+                      setDialogState(() {
+                        rows = newRows;
+                        tableControllers = List.generate(
+                          rows,
+                          (r) => List.generate(
+                            cols,
+                            (c) => r < tableControllers.length && c < tableControllers[r].length
+                                ? tableControllers[r][c]
+                                : TextEditingController(text: 'عنصر'),
+                          ),
+                        );
+                      });
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextField(
+                  decoration: const InputDecoration(labelText: 'عدد الأعمدة', border: OutlineInputBorder()),
+                  keyboardType: TextInputType.number,
+                  controller: TextEditingController(text: cols.toString()),
+                  onSubmitted: (val) {
+                    int? newCols = int.tryParse(val);
+                    if (newCols != null && newCols > 0) {
+                      setDialogState(() {
+                        cols = newCols;
+                        tableControllers = List.generate(
+                          rows,
+                          (r) => List.generate(
+                            cols,
+                            (c) => r < tableControllers.length && c < tableControllers[r].length
+                                ? tableControllers[r][c]
+                                : TextEditingController(text: 'عنصر'),
+                          ),
+                        );
+                      });
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
+  void _saveQuestion(
+      {required Question? existingQuestion,
+        required int? index,
+        required TextEditingController titleController,
+        required TextEditingController scoreController,
+        required QuestionType selectedType,
+        required int lines,
+        required List<TextEditingController> optionControllers,
+        required List<TextEditingController> tfControllers,
+        required int rows,
+        required int cols,
+        required List<List<TextEditingController>> tableControllers}) {
+    final title = titleController.text.trim();
+    final score = double.tryParse(scoreController.text) ?? 1.0;
+
+    if (title.isEmpty) return;
+
+    List<String> options = optionControllers.map((c) => c.text.trim()).toList();
+    List<String> statements = tfControllers.map((c) => c.text.trim()).toList();
+    List<List<String>> tableData = tableControllers
+        .map((row) => row.map((c) => c.text.trim()).toList())
+        .toList();
+
+    setState(() {
+      if (existingQuestion != null && index != null) {
+        existingQuestion.title = title;
+        existingQuestion.score = score;
+        existingQuestion.type = selectedType;
+        existingQuestion.answerLines = lines;
+        existingQuestion.options = options;
+        existingQuestion.statements = statements;
+        existingQuestion.rows = rows;
+        existingQuestion.cols = cols;
+        existingQuestion.tableData = tableData;
+      } else {
+        final newQ = Question(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          title: title,
+          type: selectedType,
+          score: score,
+          answerLines: lines,
+          options: options,
+          statements: statements,
+          rows: rows,
+          cols: cols,
+          tableData: tableData,
+        );
+        _questions.add(newQ);
+      }
+    });
+    Navigator.of(context).pop();
   }
 
   void _openQuestionDialog({Question? existingQuestion, int? index}) {
@@ -658,9 +885,9 @@ class _MainEditorScreenState extends State<MainEditorScreen>
     int cols = isEditing ? existingQuestion.cols : 2;
     List<List<TextEditingController>> tableControllers = List.generate(
       rows,
-      (r) => List.generate(
+          (r) => List.generate(
         cols,
-        (c) => TextEditingController(
+            (c) => TextEditingController(
           text: (isEditing && r < existingQuestion.tableData.length && c < existingQuestion.tableData[r].length)
               ? existingQuestion.tableData[r][c]
               : 'عنصر',
@@ -704,163 +931,41 @@ class _MainEditorScreenState extends State<MainEditorScreen>
                         TextField(controller: scoreController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'الدرجة', border: OutlineInputBorder())),
                         const SizedBox(height: 16),
                         const Divider(),
-                        if (selectedType == QuestionType.text)
-                          Row(
-                            children: [
-                              const Text('عدد أسطر الإجابة: '),
-                              DropdownButton<int>(
-                                value: lines,
-                                items: [1, 2, 3, 4, 5, 6].map((l) => DropdownMenuItem(value: l, child: Text('$l'))).toList(),
-                                onChanged: (val) => setDialogState(() => lines = val!),
-                              ),
-                            ],
-                          )
-                        else if (selectedType == QuestionType.complete || selectedType == QuestionType.trueFalse)
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(selectedType == QuestionType.complete ? 'فقرات الأكمل:' : 'عبارات الصح والخطأ:'),
-                                  IconButton(
-                                    icon: const Icon(Icons.add_circle, color: Colors.green),
-                                    onPressed: () => setDialogState(() => tfControllers.add(TextEditingController())),
-                                  ),
-                                ],
-                              ),
-                              ...tfControllers.asMap().entries.map((e) => Row(
-                                children: [
-                                  Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 4),
-                                      child: TextField(controller: e.value, decoration: InputDecoration(labelText: 'الفقرة ${e.key + 1}', isDense: true)),
-                                    ),
-                                  ),
-                                  if (tfControllers.length > 1)
-                                    IconButton(
-                                      icon: const Icon(Icons.remove_circle, color: Colors.red),
-                                      onPressed: () => setDialogState(() => tfControllers.removeAt(e.key)),
-                                    ),
-                                ],
-                              )),
-                            ],
-                          )
-                        else if (selectedType == QuestionType.mcq)
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('الخيارات المتاحة:'),
-                                    IconButton(
-                                      icon: const Icon(Icons.add_circle, color: Colors.green),
-                                      onPressed: () => setDialogState(() => optionControllers.add(TextEditingController(text: 'الخيار الجديد'))),
-                                    ),
-                                  ],
-                                ),
-                                ...optionControllers.asMap().entries.map((e) => Row(
-                                  children: [
-                                    Expanded(
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(vertical: 4),
-                                        child: TextField(controller: e.value, decoration: InputDecoration(labelText: 'الخيار ${e.key + 1}', isDense: true)),
-                                      ),
-                                    ),
-                                    if (optionControllers.length > 2)
-                                      IconButton(
-                                        icon: const Icon(Icons.remove_circle, color: Colors.red),
-                                        onPressed: () => setDialogState(() => optionControllers.removeAt(e.key)),
-                                      ),
-                                  ],
-                                )),
-                              ],
-                            )
-                          else if (selectedType == QuestionType.table)
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('تخصيص الجدول:'),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: TextField(
-                                          decoration: const InputDecoration(labelText: 'عدد الأسطر'),
-                                          keyboardType: TextInputType.number,
-                                          controller: TextEditingController(text: rows.toString()),
-                                          onChanged: (val) {
-                                            int? r = int.tryParse(val);
-                                            if (r != null && r > 0) {
-                                              setDialogState(() {
-                                                rows = r;
-                                                tableControllers = List.generate(
-                                                  rows,
-                                                  (i) => List.generate(cols, (j) => TextEditingController(text: 'عنصر')),
-                                                );
-                                              });
-                                            }
-                                          },
-                                        ),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: TextField(
-                                          decoration: const InputDecoration(labelText: 'عدد الأعمدة'),
-                                          keyboardType: TextInputType.number,
-                                          controller: TextEditingController(text: cols.toString()),
-                                          onChanged: (val) {
-                                            int? c = int.tryParse(val);
-                                            if (c != null && c > 0) {
-                                              setDialogState(() {
-                                                cols = c;
-                                                tableControllers = List.generate(
-                                                  rows,
-                                                  (i) => List.generate(cols, (j) => TextEditingController(text: 'عنصر')),
-                                                );
-                                              });
-                                            }
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
+                        _buildDynamicQuestionInputs(
+                          selectedType,
+                          setDialogState,
+                          lines: lines,
+                          onLinesChanged: (l) => setDialogState(() => lines = l),
+                          optionControllers: optionControllers,
+                          tfControllers: tfControllers,
+                          rows: rows,
+                          cols: cols,
+                          tableControllers: tableControllers,
+                        ),
                       ],
                     ),
                   ),
                 ),
                 actions: [
-                  TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('إلغاء'),
+                  ),
                   ElevatedButton(
-                    onPressed: () {
-                      final double score = double.tryParse(scoreController.text) ?? 1.0;
-                      List<List<String>> finalTableData = tableControllers.map((row) => row.map((c) => c.text).toList()).toList();
-
-                      final newQuestion = Question(
-                        id: isEditing ? existingQuestion.id : DateTime.now().millisecondsSinceEpoch.toString(),
-                        title: titleController.text.isEmpty ? 'سؤال بدون عنوان' : titleController.text,
-                        type: selectedType,
-                        score: score,
-                        answerLines: lines,
-                        options: optionControllers.map((c) => c.text).where((t) => t.isNotEmpty).toList(),
-                        statements: tfControllers.map((c) => c.text).where((t) => t.isNotEmpty).toList(),
-                        rows: rows,
-                        cols: cols,
-                        tableData: finalTableData,
-                      );
-
-                      setState(() {
-                        if (isEditing && index != null) {
-                          _questions[index] = newQuestion;
-                        } else {
-                          _questions.add(newQuestion);
-                        }
-                      });
-                      Navigator.pop(context);
-                    },
-                    child: Text(isEditing ? 'تحديث' : 'حفظ'),
+                    onPressed: () => _saveQuestion(
+                      existingQuestion: existingQuestion,
+                      index: index,
+                      titleController: titleController,
+                      scoreController: scoreController,
+                      selectedType: selectedType,
+                      lines: lines,
+                      optionControllers: optionControllers,
+                      tfControllers: tfControllers,
+                      rows: rows,
+                      cols: cols,
+                      tableControllers: tableControllers,
+                    ),
+                    child: const Text('حفظ'),
                   ),
                 ],
               ),
