@@ -59,7 +59,6 @@ class _MainEditorScreenState extends State<MainEditorScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  // controllers كليشة الاختبار المصغرة والمضغوطة
   final _schoolController = TextEditingController(text: 'ثانوية المكلا النموذجية للبنين\nمديرية المكلا');
   final _timeController = TextEditingController(text: 'الزمن : حصة');
   final _examTitleController = TextEditingController(text: 'اختبار الشهري الثاني الفصل الدراسي الثاني\nللصف الأول الثانوي - للعام 2025-2026م');
@@ -87,125 +86,118 @@ class _MainEditorScreenState extends State<MainEditorScreen>
     super.dispose();
   }
 
-  // --------------------------------------------------------------------------
-  // دالة التصدير الحقيقي كـ PDF مطابق تماماً للصورة الرسمية
-  // --------------------------------------------------------------------------
   Future<void> _exportOrPrintExam() async {
-    final pdf = pwWidget.Document();
+    final pdf = pw.Document();
 
-    // تحميل خط عربي لضمان ظهور النصوص العربية بشكل صحيح في ملف الـ PDF
     var fontData = await PdfGoogleFonts.amiriRegular();
     var fontBold = await PdfGoogleFonts.amiriBold();
 
     pdf.addPage(
-      pwWidget.Page(
+      pw.Page(
         pageFormat: PdfPageFormat.a4,
-        textDirection: pwWidget.TextDirection.rtl,
-        build: (pwWidget.Context context) {
-          return pwWidget.Container(
-            padding: const pwWidget.EdgeInsets.all(10),
-            decoration: pwWidget.BoxDecoration(
-              border: pwWidget.Border.all(color: pw.PdfColors.black, width: 1.2),
+        textDirection: pw.TextDirection.rtl,
+        build: (pw.Context context) {
+          return pw.Container(
+            padding: const pw.EdgeInsets.all(10),
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(color: PdfColors.black, width: 1.2),
             ),
-            child: pwWidget.Column(
-              crossAxisAlignment: pwWidget.CrossAxisAlignment.stretch,
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.stretch,
               children: [
-                // ترويسة الاختبار
-                pwWidget.Row(
-                  mainAxisAlignment: pwWidget.MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: pwWidget.CrossAxisAlignment.start,
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pwWidget.Column(
-                      crossAxisAlignment: pwWidget.CrossAxisAlignment.start,
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
-                        pwWidget.Text(_schoolController.text, style: pwWidget.TextStyle(font: fontBold, fontSize: 10)),
-                        pwWidget.SizedBox(height: 2),
-                        pwWidget.Text(_timeController.text, style: pwWidget.TextStyle(font: fontData, fontSize: 10)),
+                        pw.Text(_schoolController.text, style: pw.TextStyle(font: fontBold, fontSize: 10)),
+                        pw.SizedBox(height: 2),
+                        pw.Text(_timeController.text, style: pw.TextStyle(font: fontData, fontSize: 10)),
                       ],
                     ),
-                    pwWidget.Container(
-                      padding: const pwWidget.EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: pwWidget.BoxDecoration(
-                        border: pwWidget.Border.all(color: pw.PdfColors.black, width: 0.8),
-                        borderRadius: const pwWidget.BorderRadius.all(pw.Radius.circular(15)),
+                    pw.Container(
+                      padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: pw.BoxDecoration(
+                        border: pw.Border.all(color: PdfColors.black, width: 0.8),
+                        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(15)),
                       ),
-                      child: pwWidget.Text(
+                      child: pw.Text(
                         _examTitleController.text,
-                        textAlign: pwWidget.TextAlign.center,
-                        style: pwWidget.TextStyle(font: fontBold, fontSize: 9.5),
+                        textAlign: pw.TextAlign.center,
+                        style: pw.TextStyle(font: fontBold, fontSize: 9.5),
                       ),
                     ),
-                    pwWidget.Column(
-                      crossAxisAlignment: pwWidget.CrossAxisAlignment.end,
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.end,
                       children: [
-                        pwWidget.Text(_subjectController.text, style: pwWidget.TextStyle(font: fontBold, fontSize: 10)),
-                        pwWidget.Text(_dayController.text, style: pwWidget.TextStyle(font: fontData, fontSize: 10)),
-                        pwWidget.Text(_dateController.text, style: pwWidget.TextStyle(font: fontData, fontSize: 10)),
+                        pw.Text(_subjectController.text, style: pw.TextStyle(font: fontBold, fontSize: 10)),
+                        pw.Text(_dayController.text, style: pw.TextStyle(font: fontData, fontSize: 10)),
+                        pw.Text(_dateController.text, style: pw.TextStyle(font: fontData, fontSize: 10)),
                       ],
                     ),
                   ],
                 ),
-                pwWidget.SizedBox(height: 6),
-                pwWidget.Row(
-                  mainAxisAlignment: pwWidget.MainAxisAlignment.spaceBetween,
+                pw.SizedBox(height: 6),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    pwWidget.Text('اسم الطالب : ________________________________________', style: pwWidget.TextStyle(font: fontBold, fontSize: 11)),
-                    pwWidget.Text('الشعبة (     )', style: pwWidget.TextStyle(font: fontBold, fontSize: 11)),
+                    pw.Text('اسم الطالب : ________________________________________', style: pw.TextStyle(font: fontBold, fontSize: 11)),
+                    pw.Text('الشعبة (     )', style: pw.TextStyle(font: fontBold, fontSize: 11)),
                   ],
                 ),
-                pwWidget.Divider(color: pw.PdfColors.black, thickness: 1.2),
-                pwWidget.SizedBox(height: 6),
-
-                // جدول الأسئلة
-                pwWidget.Table(
-                  border: pwWidget.TableBorder.all(color: pw.PdfColors.black, width: 0.8),
+                pw.Divider(color: PdfColors.black, thickness: 1.2),
+                pw.SizedBox(height: 6),
+                pw.Table(
+                  border: pw.TableBorder.all(color: PdfColors.black, width: 0.8),
                   columnWidths: const {
-                    0: pwWidget.FlexColumnWidth(5.5),
-                    1: pwWidget.FlexColumnWidth(0.8),
+                    0: pw.FlexColumnWidth(5.5),
+                    1: pw.FlexColumnWidth(0.8),
                   },
                   children: [
-                    pwWidget.TableRow(
-                      decoration: const pwWidget.BoxDecoration(color: pw.PdfColors.grey200),
+                    pw.TableRow(
+                      decoration: const pw.BoxDecoration(color: PdfColors.grey200),
                       children: [
-                        pwWidget.Padding(
-                          padding: const pwWidget.EdgeInsets.all(5.0),
-                          child: pwWidget.Text(
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(5.0),
+                          child: pw.Text(
                             '* أجب عن جميع الأسئلة الآتية :',
-                            textAlign: pwWidget.TextAlign.center,
-                            style: pwWidget.TextStyle(font: fontBold, fontSize: 11),
+                            textAlign: pw.TextAlign.center,
+                            style: pw.TextStyle(font: fontBold, fontSize: 11),
                           ),
                         ),
-                        pwWidget.Padding(
-                          padding: const pwWidget.EdgeInsets.all(5.0),
-                          child: pwWidget.Text(
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(5.0),
+                          child: pw.Text(
                             'الدرجة',
-                            textAlign: pwWidget.TextAlign.center,
-                            style: pwWidget.TextStyle(font: fontBold, fontSize: 11),
+                            textAlign: pw.TextAlign.center,
+                            style: pw.TextStyle(font: fontBold, fontSize: 11),
                           ),
                         ),
                       ],
                     ),
-                    pwWidget.TableRow(
+                    pw.TableRow(
                       children: [
-                        pwWidget.Padding(
-                          padding: const pwWidget.EdgeInsets.all(6.0),
-                          child: pwWidget.Column(
-                            crossAxisAlignment: pwWidget.CrossAxisAlignment.start,
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(6.0),
+                          child: pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
                             children: _questions.isEmpty
-                                ? [pwWidget.Text('لا توجد أسئلة مضافة.', style: pwWidget.TextStyle(font: fontData))]
+                                ? [pw.Text('لا توجد أسئلة مضافة.', style: pw.TextStyle(font: fontData))]
                                 : _questions.asMap().entries.map((entry) {
                               return _buildPdfQuestionItem(entry.key + 1, entry.value, fontData, fontBold);
                             }).toList(),
                           ),
                         ),
-                        pwWidget.Padding(
-                          padding: const pwWidget.EdgeInsets.symmetric(vertical: 10.0),
-                          child: pwWidget.Column(
-                            mainAxisAlignment: pwWidget.MainAxisAlignment.spaceAround,
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.symmetric(vertical: 10.0),
+                          child: pw.Column(
+                            mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
                             children: _questions.map((q) {
-                              return pwWidget.Padding(
-                                padding: const pwWidget.EdgeInsets.symmetric(vertical: 20.0),
-                                child: pwWidget.Text('${q.score.toInt()}', style: pwWidget.TextStyle(font: fontBold, fontSize: 12)),
+                              return pw.Padding(
+                                padding: const pw.EdgeInsets.symmetric(vertical: 20.0),
+                                child: pw.Text('${q.score.toInt()}', style: pw.TextStyle(font: fontBold, fontSize: 12)),
                               );
                             }).toList(),
                           ),
@@ -221,44 +213,43 @@ class _MainEditorScreenState extends State<MainEditorScreen>
       ),
     );
 
-    // فتح نافذة طباعة / حفظ الـ PDF مباشرة في التطبيق
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => pdf.save(),
     );
   }
 
-  pwWidget.Widget _buildPdfQuestionItem(int number, Question q, pwWidget.Font fontData, pwWidget.Font fontBold) {
+  pw.Widget _buildPdfQuestionItem(int number, Question q, pw.Font fontData, pw.Font fontBold) {
     const arabicLetters = ['أ', 'ب', 'ج', 'د', 'هـ', 'و'];
     String letter = (number - 1 < arabicLetters.length) ? arabicLetters[number - 1] : '$number';
 
-    return pwWidget.Padding(
-      padding: const pwWidget.EdgeInsets.only(bottom: 12.0),
-      child: pwWidget.Column(
-        crossAxisAlignment: pwWidget.CrossAxisAlignment.start,
+    return pw.Padding(
+      padding: const pw.EdgeInsets.only(bottom: 12.0),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
-          pwWidget.Text('$letter) ${q.title}', style: pwWidget.TextStyle(font: fontBold, fontSize: 11)),
-          pwWidget.SizedBox(height: 4),
+          pw.Text('$letter) ${q.title}', style: pw.TextStyle(font: fontBold, fontSize: 11)),
+          pw.SizedBox(height: 4),
           if (q.type == QuestionType.text)
-            ...List.generate(q.answerLines, (index) => pwWidget.Container(
-              margin: const pwWidget.EdgeInsets.symmetric(vertical: 3, horizontal: 10),
-              decoration: const pwWidget.BoxDecoration(
-                border: pwWidget.Border(bottom: pwWidget.BorderSide(color: pw.PdfColors.black, width: 0.6)),
+            ...List.generate(q.answerLines, (index) => pw.Container(
+              margin: const pw.EdgeInsets.symmetric(vertical: 3, horizontal: 10),
+              decoration: const pw.BoxDecoration(
+                border: pw.Border(bottom: pw.BorderSide(color: PdfColors.black, width: 0.6)),
               ),
               height: 16,
             ))
           else if (q.type == QuestionType.mcq)
-            ...q.options.map((opt) => pwWidget.Padding(
-              padding: const pwWidget.EdgeInsets.only(right: 10, bottom: 2),
-              child: pwWidget.Text('• $opt', style: pwWidget.TextStyle(font: fontData, fontSize: 10)),
+            ...q.options.map((opt) => pw.Padding(
+              padding: const pw.EdgeInsets.only(right: 10, bottom: 2),
+              child: pw.Text('• $opt', style: pw.TextStyle(font: fontData, fontSize: 10)),
             ))
           else if (q.type == QuestionType.trueFalse)
-            ...q.statements.map((stmt) => pwWidget.Padding(
-              padding: const pwWidget.EdgeInsets.only(right: 10, bottom: 2),
-              child: pwWidget.Row(
-                mainAxisAlignment: pwWidget.MainAxisAlignment.spaceBetween,
+            ...q.statements.map((stmt) => pw.Padding(
+              padding: const pw.EdgeInsets.only(right: 10, bottom: 2),
+              child: pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pwWidget.Text('• $stmt', style: pwWidget.TextStyle(font: fontData, fontSize: 10)),
-                  pwWidget.Text('(   )', style: pwWidget.TextStyle(font: fontData, fontSize: 10)),
+                  pw.Text('• $stmt', style: pw.TextStyle(font: fontData, fontSize: 10)),
+                  pw.Text('(   )', style: pw.TextStyle(font: fontData, fontSize: 10)),
                 ],
               ),
             )),
